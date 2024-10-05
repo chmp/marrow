@@ -6,7 +6,7 @@ version = "0.1.0"
 authors = ["Christopher Prohm <mail@cprohm.de>"]
 description  = "A minimalistic Arrow implementation"
 readme = "../Readme.md"
-repository = "https://github.com/chmp/serde_arrow"
+repository = "https://github.com/chmp/marrow"
 license = "MIT"
 
 [package.metadata.docs.rs]
