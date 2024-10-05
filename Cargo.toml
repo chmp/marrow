@@ -1,0 +1,8 @@
+[workspace]
+members = ["marrow"]
+default-members = ["marrow"]
+
+resolver = "2"
+
+[profile.bench]
+debug = true
