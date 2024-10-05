@@ -1,11 +1,13 @@
 # `marrow` - a minimalistic Arrow implementation
 
-
+`marrow` allows building and viewing arrow arrays of different implementations using a unified
+interface. The motivation behind `marrow` is to allow libraries to target multiple different arrow
+versions simultaneously.
 
 ## License
 
 ```text
-Copyright (c) 2021 - 2024 Christopher Prohm and contributors
+Copyright (c) 2024 Christopher Prohm
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
