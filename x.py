@@ -48,7 +48,7 @@ workflow_test_template = {
     },
     "env": {"CARGO_TERM_COLOR": "always"},
     "jobs": {
-        "build": {
+        "test": {
             "runs-on": "ubuntu-latest",
             "steps": [
                 {"uses": "actions/checkout@v4"},
@@ -67,7 +67,7 @@ workflow_release_template = {
     },
     "env": {"CARGO_TERM_COLOR": "always"},
     "jobs": {
-        "build": {
+        "release": {
             "runs-on": "ubuntu-latest",
             "env": {
                 "CARGO_REGISTRY_TOKEN": "${{ secrets.CARGO_REGISTRY_TOKEN }}",
