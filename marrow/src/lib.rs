@@ -4,6 +4,13 @@
 //! interface. The motivation behind `marrow` is to allow libraries to target multiple different
 //! arrow versions simultaneously.
 //!
+//! The main type are
+//!
+//! - [`Array`][crate::array::Array]: an array with owned data
+//! - [`View`][crate::view::View]: an array with borrowed data
+//! - [`Field`][crate::datatypes::Field]: field metadata
+//! - [`DataType`][crate::datatypes::DataType]: field data types
+//!
 //! ## Conversions
 //!
 //! `marrow` offers conversions between its types and the types of different arrow versions. See the
