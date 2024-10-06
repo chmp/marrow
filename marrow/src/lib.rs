@@ -13,8 +13,8 @@
 //!
 //! - [`Array`][crate::array::Array]: an array with owned data
 //! - [`View`][crate::view::View]: an array with borrowed data
-//! - [`Field`][crate::datatypes::Field]: field metadata
-//! - [`DataType`][crate::datatypes::DataType]: field data types
+//! - [`Field`][crate::datatypes::Field]: the data type and metadata of a field
+//! - [`DataType`][crate::datatypes::DataType]: data types of array
 //!
 //! ## Conversions
 //!

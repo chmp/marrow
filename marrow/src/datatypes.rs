@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
-/// The metadata of a field
+/// The data type and metadata of a field
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Field {
@@ -37,7 +37,7 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
     }
 }
 
-/// Supported data types
+/// Data types of array
 ///
 #[cfg_attr(
 // arrow-version: replace:     feature = "arrow-{version}",

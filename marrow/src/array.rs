@@ -3,7 +3,7 @@ use half::f16;
 
 use crate::datatypes::{FieldMeta, TimeUnit};
 
-/// An owned array
+/// An array with owned data
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum Array {

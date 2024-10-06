@@ -5,6 +5,8 @@ use half::f16;
 
 use crate::datatypes::{FieldMeta, TimeUnit};
 
+/// An array with borrowed data
+///
 /// See [`Array`][crate::array::Array]
 #[derive(Clone, Debug)]
 #[non_exhaustive]
