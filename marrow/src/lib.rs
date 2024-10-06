@@ -38,7 +38,7 @@
 //! - `TryFrom<arrow::datatypes::TimeUnit> for `[`marrow::datatypes::TimeUnit`][crate::datatypes::TimeUnit]
 //! - `TryFrom<arrow::datatypes::UnionMode> for `[`marrow::datatypes::UnionMode`][crate::datatypes::UnionMode]
 //!
-//! For `arrow2` the corresponding conversions are implemented as well.
+//! For `arrow2` the corresponding conversions are implemented.
 //!
 #![cfg_attr(
 // arrow-version: replace:     feature = "arrow-{version}",
