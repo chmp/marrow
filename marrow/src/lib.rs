@@ -1,4 +1,4 @@
-//! # `marrow` - a minimalist Arrow implementation
+//! # `marrow` - minimalist Arrow interop
 //!
 //! `marrow` allows building and viewing arrow arrays of different implementations using a unified
 //! interface. The motivation behind `marrow` is to allow libraries to target multiple different
@@ -124,8 +124,11 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 pub mod _impl;
 #[deny(missing_docs)]
 pub mod array;
+#[deny(missing_docs)]
 pub mod datatypes;
+#[deny(missing_docs)]
 pub mod error;
+#[deny(missing_docs)]
 pub mod meta;
 pub mod view;
 

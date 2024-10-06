@@ -7,8 +7,7 @@ use crate::{datatypes::TimeUnit, meta::FieldMeta};
 
 /// A view into the data of an array
 ///
-/// The data is owned by an external array. See [`Array`][crate::array::Array] for docs on the
-/// different variants.
+/// See [`Array`][crate::array::Array]
 #[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum View<'a> {

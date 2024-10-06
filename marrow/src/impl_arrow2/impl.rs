@@ -18,7 +18,7 @@ impl From<arrow2::error::Error> for MarrowError {
     }
 }
 
-/// Conversion from `arrow2` data types
+/// Conversion from `arrow2` data types (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<&arrow2::datatypes::DataType> for DataType {
     type Error = MarrowError;
 
@@ -109,7 +109,7 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
     }
 }
 
-/// Conversion from `arrow2` fields
+/// Conversion from `arrow2` fields (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<&arrow2::datatypes::Field> for Field {
     type Error = MarrowError;
 
@@ -124,7 +124,7 @@ impl TryFrom<&arrow2::datatypes::Field> for Field {
 }
 
 
-/// Conversion to `arrow2` data types
+/// Conversion to `arrow2` data types (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<&DataType> for arrow2::datatypes::DataType {
     type Error = MarrowError;
 
@@ -235,7 +235,7 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
     }
 }
 
-/// Conversion to `arrow2` fields
+/// Conversion to `arrow2` fields (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<&Field> for arrow2::datatypes::Field {
     type Error = MarrowError;
 
@@ -249,7 +249,7 @@ impl TryFrom<&Field> for arrow2::datatypes::Field {
     }
 }
 
-/// Conversion to `arrow2` time units
+/// Conversion to `arrow2` time units (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<TimeUnit> for arrow2::datatypes::TimeUnit {
     type Error = MarrowError;
 
@@ -263,7 +263,7 @@ impl TryFrom<TimeUnit> for arrow2::datatypes::TimeUnit {
     }
 }
 
-/// Conversion from `arrow2` time units
+/// Conversion from `arrow2` time units (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<arrow2::datatypes::TimeUnit> for TimeUnit {
     type Error = MarrowError;
 
@@ -277,7 +277,7 @@ impl TryFrom<arrow2::datatypes::TimeUnit> for TimeUnit {
     }
 }
 
-/// Conversion from `arrow2` union modes
+/// Conversion from `arrow2` union modes (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<arrow2::datatypes::UnionMode> for UnionMode {
     type Error = MarrowError;
 
@@ -289,7 +289,7 @@ impl TryFrom<arrow2::datatypes::UnionMode> for UnionMode {
     }
 }
 
-/// Conversion to `arrow2` union modes
+/// Conversion to `arrow2` union modes (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<UnionMode> for arrow2::datatypes::UnionMode {
     type Error = MarrowError;
 
@@ -301,7 +301,7 @@ impl TryFrom<UnionMode> for arrow2::datatypes::UnionMode {
     }
 }
 
-/// Conversion to `arrow2` arrays
+/// Conversion to `arrow2` arrays (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
     type Error = MarrowError;
 
@@ -567,7 +567,7 @@ fn build_dictionary_array<K: arrow2::array::DictionaryKey>(
     )?))
 }
 
-/// Conversion from `arrow2` arrays
+/// Conversion from `arrow2` arrays (*requires one of the `arrow2-{version}` features*)
 impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
     type Error = MarrowError;
 

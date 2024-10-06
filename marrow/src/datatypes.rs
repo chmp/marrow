@@ -18,41 +18,81 @@ pub struct Field {
 }
 
 /// Supported data types
+///
+#[cfg_attr(
+// arrow-version: replace:     feature = "arrow-{version}",
+    feature = "arrow-53",
+    doc = r#"
+See also [`arrow::datatypes::DataType`][crate::_impl::arrow::datatypes::DataType]
+"#,
+)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum DataType {
+    /// Data type for fields without data
     Null,
+    /// `bool` values stored as bitmaps
     Boolean,
+    /// `i8` stored as a contiguous array
     Int8,
+    /// `i16` stored as a contiguous array
     Int16,
+    /// `i32` stored as a contiguous array
     Int32,
+    /// `i64` stored as a contiguous array
     Int64,
+    /// `u8` stored as a contiguous array
     UInt8,
+    /// `u16` stored as a contiguous array
     UInt16,
+    /// `u32` stored as a contiguous array
     UInt32,
+    /// `u64` stored as a contiguous array
     UInt64,
+    /// `f16` stored as a contiguous array
     Float16,
+    /// `f32` stored as a contiguous array
     Float32,
+    /// `f64` stored as a contiguous array
     Float64,
+    /// Strings stored with `i32` offsets
     Utf8,
+    /// Strings stored with `i64` offsets
     LargeUtf8,
+    /// Byte arrays stored with `i32` offsets
     Binary,
+    /// Byte arrays stored with `i64` offsets
     LargeBinary,
+    /// Byte arrays with fixed length
     FixedSizeBinary(i32),
+    /// Dates as the number of days since the epoch stored as `i32` (e.g., `"2022-10-11"`)
     Date32,
+    /// Dates as the number of seconds since the epoch stored as `i64` (e.g., `"2022-10-11"`)
     Date64,
+    /// A UTC timestamps stored as `i64` with the specified unit and an optional timezone
     Timestamp(TimeUnit, Option<String>),
+    /// Times as an offset from midnight stored as `i32` with the given unit
     Time32(TimeUnit),
+    /// Times as an offset from midnight stored as `i64` with the given unit
     Time64(TimeUnit),
+    /// Durations stored as `i64` with the given unit
     Duration(TimeUnit),
+    /// Fixed point values stored with the given precision and scale
     Decimal128(u8, i8),
+    /// Structs
     Struct(Vec<Field>),
+    /// Lists with `i32` offsets
     List(Box<Field>),
+    /// Lists with `i64` offsets
     LargeList(Box<Field>),
+    /// Lists with a fixed number of element with `i32` offsets
     FixedSizeList(Box<Field>, i32),
+    /// Maps
     Map(Box<Field>, bool),
+    /// Deduplicated values
     Dictionary(Box<DataType>, Box<DataType>, bool),
+    /// Union o different types
     Union(Vec<(i8, Field)>, UnionMode),
 }
 
@@ -60,9 +100,13 @@ pub enum DataType {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TimeUnit {
+    #[allow(missing_docs)]
     Second,
+    #[allow(missing_docs)]
     Millisecond,
+    #[allow(missing_docs)]
     Microsecond,
+    #[allow(missing_docs)]
     Nanosecond,
 }
 

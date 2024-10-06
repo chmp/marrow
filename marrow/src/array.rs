@@ -138,7 +138,7 @@ pub struct StructArray {
 }
 
 /// An array of lists
-/// 
+///
 /// The value element `i` is given by the pseudo code `elements[offsets[i]..[offsets[i+1]]`
 #[derive(Clone, Debug)]
 pub struct ListArray<O> {

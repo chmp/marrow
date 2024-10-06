@@ -1,4 +1,4 @@
-# `marrow` - a minimalist Arrow implementation
+# `marrow` - minimalist Arrow interop
 
 `marrow` allows building and viewing arrow arrays of different implementations using a unified
 interface. The motivation behind `marrow` is to allow libraries to target multiple different arrow

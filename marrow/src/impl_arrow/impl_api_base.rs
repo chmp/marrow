@@ -21,7 +21,7 @@ impl From<arrow_schema::ArrowError> for MarrowError {
     }
 }
 
-/// Converison from `arrow` data types
+/// Converison from `arrow` data types (*requires one of the `arrow-{version}` features*)
 // only some arrow version implement Copy for unit
 #[allow(clippy::clone_on_copy)]
 impl TryFrom<&arrow_schema::DataType> for DataType {
@@ -88,7 +88,7 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
     }
 }
 
-/// Converison from `arrow` fields
+/// Converison from `arrow` fields (*requires one of the `arrow-{version}` features*)
 impl TryFrom<&arrow_schema::Field> for Field {
     type Error = MarrowError;
 
@@ -102,7 +102,7 @@ impl TryFrom<&arrow_schema::Field> for Field {
     }
 }
 
-/// Converison to `arrow` data types
+/// Converison to `arrow` data types (*requires one of the `arrow-{version}` features*)
 impl TryFrom<&DataType> for arrow_schema::DataType {
     type Error = MarrowError;
 
@@ -165,7 +165,7 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
     }
 }
 
-/// Converison to `arrow` fields
+/// Converison to `arrow` fields (*requires one of the `arrow-{version}` features*)
 impl TryFrom<&Field> for arrow_schema::Field {
     type Error = MarrowError;
 
@@ -180,43 +180,59 @@ impl TryFrom<&Field> for arrow_schema::Field {
     }
 }
 
-macro_rules! impl_from_one_to_one {
-    (
-        $src_ty:ty => $dst_ty:ty,
-        [
-            $($src_variant:ident => $dst_variant:ident),*
-        ]
-    ) => {
-        impl TryFrom<$dst_ty> for $src_ty {
-            type Error = MarrowError;
+/// Conversion to `arrow` time units (*requires one of the `arrow-{version}` features*)
+impl TryFrom<TimeUnit> for arrow_schema::TimeUnit {
+    type Error = MarrowError;
 
-            fn try_from(value: $dst_ty) -> Result<Self> {
-                match value {
-                    $(<$dst_ty>::$dst_variant => Ok(<$src_ty>::$src_variant),)*
-                }
-            }
+    fn try_from(value: TimeUnit) -> Result<arrow_schema::TimeUnit> {
+        match value {
+            TimeUnit::Second => Ok(arrow_schema::TimeUnit::Second),
+            TimeUnit::Millisecond => Ok(arrow_schema::TimeUnit::Millisecond),
+            TimeUnit::Microsecond => Ok(arrow_schema::TimeUnit::Microsecond),
+            TimeUnit::Nanosecond => Ok(arrow_schema::TimeUnit::Nanosecond),
         }
-
-        impl TryFrom<$src_ty> for $dst_ty {
-            type Error = MarrowError;
-
-            fn try_from(value: $src_ty) -> Result<Self> {
-                match value {
-                    $(<$src_ty>::$src_variant => Ok(<$dst_ty>::$dst_variant),)*
-                }
-            }
-        }
-    };
+    }
 }
 
-impl_from_one_to_one!(
-    TimeUnit => arrow_schema::TimeUnit,
-    [Second => Second, Millisecond => Millisecond, Microsecond => Microsecond, Nanosecond => Nanosecond]
-);
+/// Conversion from `arrow` time units (*requires one of the `arrow-{version}` features*)
+impl TryFrom<arrow_schema::TimeUnit> for TimeUnit {
+    type Error = MarrowError;
 
-impl_from_one_to_one!(UnionMode => arrow_schema::UnionMode, [Sparse => Sparse, Dense => Dense]);
+    fn try_from(value: arrow_schema::TimeUnit) -> Result<TimeUnit> {
+        match value {
+            arrow_schema::TimeUnit::Second => Ok(TimeUnit::Second),
+            arrow_schema::TimeUnit::Millisecond => Ok(TimeUnit::Millisecond),
+            arrow_schema::TimeUnit::Microsecond => Ok(TimeUnit::Microsecond),
+            arrow_schema::TimeUnit::Nanosecond => Ok(TimeUnit::Nanosecond),
+        }
+    }
+}
 
-/// Converison to `arrow` arrays
+/// Conversion from `arrow` union modes (*requires one of the `arrow-{version}` features*)
+impl TryFrom<arrow_schema::UnionMode> for UnionMode {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow_schema::UnionMode) -> Result<Self> {
+        match value {
+            arrow_schema::UnionMode::Dense => Ok(UnionMode::Dense),
+            arrow_schema::UnionMode::Sparse => Ok(UnionMode::Sparse),
+        }
+    }
+}
+
+/// Conversion to `arrow` union modes (*requires one of the `arrow-{version}` features*)
+impl TryFrom<UnionMode> for arrow_schema::UnionMode {
+    type Error = MarrowError;
+
+    fn try_from(value: UnionMode) -> Result<Self> {
+        match value {
+            UnionMode::Dense => Ok(arrow_schema::UnionMode::Dense),
+            UnionMode::Sparse => Ok(arrow_schema::UnionMode::Sparse),
+        }
+    }
+}
+
+/// Converison to `arrow` arrays (*requires one of the `arrow-{version}` features*)
 impl TryFrom<Array> for Arc<dyn arrow_array::Array> {
     type Error = MarrowError;
 
@@ -472,7 +488,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
     }
 }
 
-/// Converison from `arrow` arrays
+/// Converison from `arrow` arrays (*requires one of the `arrow-{version}` features*)
 impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
     type Error = MarrowError;
 
