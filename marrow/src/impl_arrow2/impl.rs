@@ -718,7 +718,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 meta: meta_from_field(field.as_ref().try_into()?),
                 validity: bits_with_offset_from_bitmap(array.validity()),
                 offsets: array.offsets().as_slice(),
-                element: Box::new(array.values().as_ref().try_into()?),
+                elements: Box::new(array.values().as_ref().try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::ListArray<i64>>() {
             let AT::LargeList(field) = array.data_type() else {
@@ -732,7 +732,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 meta: meta_from_field(field.as_ref().try_into()?),
                 validity: bits_with_offset_from_bitmap(array.validity()),
                 offsets: array.offsets().as_slice(),
-                element: Box::new(array.values().as_ref().try_into()?),
+                elements: Box::new(array.values().as_ref().try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::StructArray>() {
             let AT::Struct(child_fields) = array.data_type() else {
@@ -766,7 +766,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             let element: View<'_> = array.field().as_ref().try_into()?;
 
             Ok(V::Map(ListView {
-                element: Box::new(element),
+                elements: Box::new(element),
                 meta,
                 validity: bits_with_offset_from_bitmap(array.validity()),
                 offsets: array.offsets().as_slice(),
@@ -830,7 +830,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 n: array.size().try_into()?,
                 validity: bits_with_offset_from_bitmap(array.validity()),
                 meta: meta_from_field(field.as_ref().try_into()?),
-                element: Box::new(child_view),
+                elements: Box::new(child_view),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::FixedSizeBinaryArray>() {
             Ok(V::FixedSizeBinary(FixedSizeBinaryView {

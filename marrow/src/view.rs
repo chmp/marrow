@@ -78,11 +78,11 @@ pub enum View<'a> {
 }
 
 /// A bitmap with an optional offset
+///
+/// The `i`-th element is stored at bit `offset + i`.
 #[derive(Debug, Clone, Copy)]
 pub struct BitsWithOffset<'a> {
     /// The offset of the bits
-    ///
-    /// The `i`-th element is stored at bit `offset + i`.
     pub offset: usize,
     /// The data of the bitmap
     pub data: &'a [u8],
@@ -91,104 +91,144 @@ pub struct BitsWithOffset<'a> {
 /// See [`NullArray`][crate::array::NullArray]
 #[derive(Clone, Debug)]
 pub struct NullView {
+    /// See [`NullArray::len`][crate::array::NullArray::len]
     pub len: usize,
 }
 
 /// See [`BooleanArray`][crate::array::BooleanArray]
 #[derive(Clone, Debug)]
 pub struct BooleanView<'a> {
+    /// See [`BooleanArray::len`][crate::array::BooleanArray::len]
     pub len: usize,
+    /// See [`BooleanArray::validity`][crate::array::BooleanArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`BooleanArray::values`][crate::array::BooleanArray::values]
     pub values: BitsWithOffset<'a>,
 }
 
 /// See [`PrimitiveArray`][crate::array::PrimitiveArray]
 #[derive(Clone, Debug)]
 pub struct PrimitiveView<'a, T> {
+    /// See [`PrimitiveArray::validity`][crate::array::PrimitiveArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`PrimitiveArray::values`][crate::array::PrimitiveArray::values]
     pub values: &'a [T],
 }
 
 /// See [`TimeArray`][crate::array::TimeArray]
 #[derive(Debug, Clone)]
 pub struct TimeView<'a, T> {
+    /// See [`TimeArray::unit`][crate::array::TimeArray::unit]
     pub unit: TimeUnit,
+    /// See [`TimeArray::validity`][crate::array::TimeArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`TimeArray::values`][crate::array::TimeArray::values]
     pub values: &'a [T],
 }
 
 /// See [`TimestampArray`][crate::array::TimestampArray]
 #[derive(Debug, Clone)]
 pub struct TimestampView<'a> {
+    /// See [`TimestampArray::unit`][crate::array::TimestampArray::unit]
     pub unit: TimeUnit,
+    /// See [`TimestampArray::timezone`][crate::array::TimestampArray::timezone]
     pub timezone: Option<String>,
+    /// See [`TimestampArray::validity`][crate::array::TimestampArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`TimestampArray::values`][crate::array::TimestampArray::values]
     pub values: &'a [i64],
 }
 
 /// See [`StructArray`][crate::array::StructArray]
 #[derive(Clone, Debug)]
 pub struct StructView<'a> {
+    /// See [`StructArray::len`][crate::array::StructArray::len]
     pub len: usize,
+    /// See [`StructArray::validity`][crate::array::StructArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`StructArray::fields`][crate::array::StructArray::fields]
     pub fields: Vec<(View<'a>, FieldMeta)>,
 }
 
 /// See [`ListArray`][crate::array::ListArray]
 #[derive(Clone, Debug)]
 pub struct ListView<'a, O> {
+    /// See [`ListArray::validity`][crate::array::ListArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`ListArray::offsets`][crate::array::ListArray::offsets]
     pub offsets: &'a [O],
+    /// See [`ListArray::meta`][crate::array::ListArray::meta]
     pub meta: FieldMeta,
-    pub element: Box<View<'a>>,
+    /// See [`ListArray::elements`][crate::array::ListArray::elements]
+    pub elements: Box<View<'a>>,
 }
 
 /// See [`FixedSizeListArray`][crate::array::FixedSizeListArray]
 #[derive(Clone, Debug)]
 pub struct FixedSizeListView<'a> {
+    /// See [`FixedSizeListArray::len`][crate::array::FixedSizeListArray::len]
     pub len: usize,
+    /// See [`FixedSizeListArray::n`][crate::array::FixedSizeListArray::n]
     pub n: i32,
+    /// See [`FixedSizeListArray::validity`][crate::array::BytesArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`FixedSizeListArray::meta`][crate::array::FixedSizeListArray::meta]
     pub meta: FieldMeta,
-    pub element: Box<View<'a>>,
+    /// See [`FixedSizeListArray::elements`][crate::array::FixedSizeListArray::elements]
+    pub elements: Box<View<'a>>,
 }
 
 /// See [`BytesArray`][crate::array::BytesArray]
 #[derive(Clone, Debug)]
 pub struct BytesView<'a, O> {
+    /// See [`BytesArray::validity`][crate::array::BytesArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`BytesArray::offsets`][crate::array::BytesArray::offsets]
     pub offsets: &'a [O],
+    /// See [`BytesArray::data`][crate::array::BytesArray::data]
     pub data: &'a [u8],
 }
 
 /// See [`FixedSizeBinaryArray`][crate::array::FixedSizeBinaryArray]
 #[derive(Clone, Debug)]
 pub struct FixedSizeBinaryView<'a> {
+    /// See [`FixedSizeBinaryArray::n`][crate::array::FixedSizeBinaryArray::n]
     pub n: i32,
+    /// See [`FixedSizeBinaryArray::validity`][crate::array::FixedSizeBinaryArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`FixedSizeBinaryArray::data`][crate::array::FixedSizeBinaryArray::data]    
     pub data: &'a [u8],
 }
 
 /// See [`DecimalArray`][crate::array::DecimalArray]
 #[derive(Clone, Debug)]
 pub struct DecimalView<'a, T> {
+    /// See [`DecimalArray::precision`][crate::array::DecimalArray::precision]
     pub precision: u8,
+    /// See [`DecimalArray::scale`][crate::array::DecimalArray::scale]
     pub scale: i8,
+    /// See [`DecimalArray::validity`][crate::array::DecimalArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`DecimalArray::values`][crate::array::DecimalArray::values]
     pub values: &'a [T],
 }
 
 /// See [`DictionaryArray`][crate::array::DictionaryArray]
 #[derive(Clone, Debug)]
 pub struct DictionaryView<'a> {
+    /// See [`DictionaryArray::indices`][crate::array::DictionaryArray::indices]
     pub indices: Box<View<'a>>,
+    /// See [`DictionaryArray::values`][crate::array::DictionaryArray::values]
     pub values: Box<View<'a>>,
 }
 
 /// See [`DenseUnionArray`][crate::array::DenseUnionArray]
 #[derive(Clone, Debug)]
 pub struct DenseUnionView<'a> {
+    /// See [`DenseUnionArray::types`][crate::array::DenseUnionArray::types]
     pub types: &'a [i8],
+    /// See [`DenseUnionArray::offsets`][crate::array::DenseUnionArray::offsets]
     pub offsets: &'a [i32],
+    /// See [`DenseUnionArray::fields`][crate::array::DenseUnionArray::fields]
     pub fields: Vec<(i8, View<'a>, FieldMeta)>,
 }

@@ -706,7 +706,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 validity: get_bits_with_offset(array),
                 offsets: array.value_offsets(),
                 meta: meta_from_field(field.as_ref().try_into()?),
-                element: Box::new(array.values().as_ref().try_into()?),
+                elements: Box::new(array.values().as_ref().try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::LargeListArray>() {
             let arrow_schema::DataType::LargeList(field) = array.data_type() else {
@@ -720,7 +720,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 validity: get_bits_with_offset(array),
                 offsets: array.value_offsets(),
                 meta: meta_from_field(field.as_ref().try_into()?),
-                element: Box::new(array.values().as_ref().try_into()?),
+                elements: Box::new(array.values().as_ref().try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::FixedSizeListArray>() {
             let arrow_schema::DataType::FixedSizeList(field, n) = array.data_type() else {
@@ -735,7 +735,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 n: *n,
                 validity: get_bits_with_offset(array),
                 meta: meta_from_field(field.as_ref().try_into()?),
-                element: Box::new(array.values().as_ref().try_into()?),
+                elements: Box::new(array.values().as_ref().try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::StructArray>() {
             let arrow_schema::DataType::Struct(column_fields) = array.data_type() else {
@@ -772,7 +772,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 validity: get_bits_with_offset(array),
                 offsets: array.value_offsets(),
                 meta: meta_from_field(Field::try_from(entries_field.as_ref())?),
-                element: Box::new(entries_array.try_into()?),
+                elements: Box::new(entries_array.try_into()?),
             }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::UInt8DictionaryArray>() {
             wrap_dictionary_array::<arrow_array::types::UInt8Type>(array)

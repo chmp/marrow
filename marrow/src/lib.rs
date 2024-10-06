@@ -32,6 +32,8 @@
 //! - `TryFrom<arrow::datatypes::TimeUnit> for marrow::datatypes::TimeUnit`
 //! - `TryFrom<arrow::datatypes::UnionMode> for marrow::datatypes::UnionMode`
 //!
+//! For `arrow2` the corresponding conversions are implemented as well.
+//!
 #![cfg_attr(
 // arrow-version: replace:     feature = "arrow-{version}",
     feature = "arrow-53",
@@ -51,7 +53,7 @@ let arrow_array = Int32Array::from(vec![Some(1), Some(2), Some(3)]);
 let marrow_view = View::try_from(&arrow_array as &dyn arrow::array::Array)?;
 
 // access the underlying data
-let View::Int32(marrow_view) = marrow_view else { unreachable!() };
+let View::Int32(marrow_view) = marrow_view else { panic!() };
 assert_eq!(marrow_view.values, &[1, 2, 3]);
 #     Ok(())
 # }
@@ -89,8 +91,8 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //! - `serde`: enable Serde serialization / deserialization for schema types
 //!   ([Field][crate::datatypes::Field], [DataType][crate::datatypes::DataType], ...). The format
 //!   will match the one of the `arrow` crate
-//! - `arrow-{major}`: enable conversions between `marrow` and `arrow={major}`
-//! - `arrow2-0-{minor}`: enable conversions between `marrow` and `arrow2=0.{minor}`
+//! - `arrow-{version}`: enable conversions between `marrow` and `arrow={version}`
+//! - `arrow2-{version}`: enable conversions between `marrow` and `arrow2={version}`
 //!
 //! This crate supports conversions from and to different version of `arrow` or `arrow2`. These
 //! conversions can be enabled by selecting the relevant features. Any combination of features can
@@ -130,6 +132,7 @@ pub mod datatypes;
 pub mod error;
 #[deny(missing_docs)]
 pub mod meta;
+#[deny(missing_docs)]
 pub mod view;
 
 mod impl_arrow;
