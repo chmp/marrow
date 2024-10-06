@@ -4,7 +4,36 @@
 //! interface. The motivation behind `marrow` is to allow libraries to target multiple different
 //! arrow versions simultaneously.
 //!
-//! # Features
+//! ## Conversions
+//!
+//! `marrow` offers conversions between its types and the types of different arrow versions. See the
+//! [features](#features) section how to enable support.
+//!
+//! From `marrow` to `arrow`:
+//!
+//! - `TryFrom<marrow::array::Array> for arrow::array::ArrayRef`
+//! - `TryFrom<&marrow::datatypes::DataType> for arrow::datatypes::DataType`
+//! - `TryFrom<&marrow::datatypes::Field> for arrow::datatypes::Field`
+//! - `TryFrom<marrow::datatypes::TimeUnit> for arrow::datatypes::TimeUnit`
+//! - `TryFrom<marrow::datatypes::UnionMode> for arrow::datatypes::UnionMode`
+//!
+//! From `arrow` to `marrow`:
+//!
+//! - `TryFrom<&dyn arrow::array::Array> for marrow::view::View<'_>`
+//! - `TryFrom<&arrow::datatypes::DataType> for marrow::datatypes::DataType`
+//! - `TryFrom<&arrow::datatypes::Field> for marrow::datatypes::Field`
+//! - `TryFrom<arrow::datatypes::TimeUnit> for marrow::datatypes::TimeUnit`
+//! - `TryFrom<arrow::datatypes::UnionMode> for marrow::datatypes::UnionMode`
+//!
+//! ## Features
+//!
+//! Supported features:
+//!
+//! - `serde`: enable Serde serialization / deserialization for schema types
+//!   ([Field][crate::datatypes::Field], [DataType][crate::datatypes::DataType], ...). The format
+//!   will match the one of the `arrow` crate
+//! - `arrow-{major}`: enable conversions between `arrow={major}` and `marrow`
+//! - `arrow2-0-{minor}`: enable conversions between `arrow2=0.{minor}` and `marrow`
 //!
 //! This crate supports conversions from and to different version of `arrow` or `arrow2`. These
 //! conversions can be enabled by selecting the relevant features. Any combination of features can
