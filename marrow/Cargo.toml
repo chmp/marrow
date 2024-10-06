@@ -11,7 +11,7 @@ license = "MIT"
 
 [package.metadata.docs.rs]
 # arrow-version:replace: features = ["arrow2-0-17", "arrow-{version}"]
-features = ["arrow2-0-17", "arrow-53"]
+features = ["arrow2-0-17", "arrow-53", "serde"]
 
 [features]
 default = []
@@ -45,7 +45,7 @@ arrow2-0-16 = ["dep:arrow2-0-16", "dep:bytemuck", "half/bytemuck"]
 
 [dependencies]
 half = { version = "2", default-features = false }
-serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+serde = { version = "1.0", default-features = false, features = ["std", "derive"], optional = true }
 
 # arrow-version:insert: arrow-array-{version} = {{ package = "arrow-array", version = "{version}", optional = true, default-features = false }}
 arrow-array-53 = { package = "arrow-array", version = "53", optional = true, default-features = false }

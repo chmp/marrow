@@ -5,7 +5,7 @@ use crate::error::{fail, ErrorKind, MarrowError, Result};
 
 /// The meta data of a field
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Field {
     /// The name of the field
     pub name: String,
@@ -19,7 +19,7 @@ pub struct Field {
 
 /// Supported data types
 #[derive(Debug, Clone, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum DataType {
     Null,
@@ -58,7 +58,7 @@ pub enum DataType {
 
 /// The unit of temporal quantities
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Ord, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum TimeUnit {
     Second,
     Millisecond,
@@ -113,7 +113,7 @@ fn time_unit_as_str() {
 
 /// The storage mode of unions
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum UnionMode {
     /// The underlying arrays also store unused values
     ///

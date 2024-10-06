@@ -35,8 +35,16 @@
           "run": "cargo --version"
         },
         {
+          "name": "Check format",
+          "run": "cargo fmt --check"
+        },
+        {
           "name": "Check",
           "run": "cargo check"
+        },
+        {
+          "name": "Check serde",
+          "run": "cargo check --features serde"
         },
         {
           "name": "Check arrow2-0-17",
@@ -119,16 +127,16 @@
           "run": "cargo check --features arrow-37"
         },
         {
-          "name": "Check format",
-          "run": "cargo fmt --check"
+          "name": "Check",
+          "run": "cargo check --all-features"
         },
         {
           "name": "Build",
-          "run": "cargo build --features arrow2-0-17,arrow-53"
+          "run": "cargo build --features serde,arrow2-0-17,arrow-53"
         },
         {
           "name": "Test",
-          "run": "cargo test --features arrow2-0-17,arrow-53"
+          "run": "cargo test --features serde,arrow2-0-17,arrow-53"
         }
       ]
     }

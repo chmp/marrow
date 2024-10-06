@@ -27,11 +27,9 @@ all_arrow_features = [
     "arrow-37",
 ]
 all_arrow2_features = ["arrow2-0-17", "arrow2-0-16"]
-default_features = f"{all_arrow2_features[0]},{all_arrow_features[0]}"
+default_features = f"serde,{all_arrow2_features[0]},{all_arrow_features[0]}"
 
-CHECKS_PLACEHOLDER = "<<< checks >>>"
-
-workflow_test_template = {
+workflow_test_template = lambda: {
     "name": "Test",
     "on": {
         "workflow_dispatch": {},
@@ -54,13 +52,13 @@ workflow_test_template = {
                 {"uses": "actions/checkout@v4"},
                 {"name": "rustc", "run": "rustc --version"},
                 {"name": "cargo", "run": "cargo --version"},
-                CHECKS_PLACEHOLDER,
+                *_workflow_check_steps(),
             ],
         }
     },
 }
 
-workflow_release_template = {
+workflow_release_template = lambda: {
     "name": "Release",
     "on": {
         "release": {"types": ["published"]},
@@ -76,7 +74,7 @@ workflow_release_template = {
                 {"uses": "actions/checkout@v4"},
                 {"name": "rustc", "run": "rustc --version"},
                 {"name": "cargo", "run": "cargo --version"},
-                CHECKS_PLACEHOLDER,
+                *_workflow_check_steps(),
                 {
                     "name": "Publish to crates.io",
                     "working-directory": "marrow",
@@ -100,59 +98,49 @@ def precommit(backtrace=False):
 
 @cmd(help="Update the github workflows")
 def update_workflows():
-    _update_workflow(
+    _update_json_file(
         self_path / ".github" / "workflows" / "test.yml",
-        workflow_test_template,
+        workflow_test_template(),
     )
 
-    _update_workflow(
+    _update_json_file(
         self_path / ".github" / "workflows" / "release.yml",
-        workflow_release_template,
+        workflow_release_template(),
     )
 
 
-def _update_workflow(path, template):
-    import copy, json
-
-    workflow = copy.deepcopy(template)
-
-    for job in workflow["jobs"].values():
-        steps = []
-        for step in job["steps"]:
-            if step == CHECKS_PLACEHOLDER:
-                steps.extend(_generate_workflow_check_steps())
-
-            else:
-                assert isinstance(step, dict)
-                steps.append(step)
-
-        job["steps"] = steps
+def _update_json_file(path, content):
+    import json
 
     print(f":: update {path}")
     with open(path, "wt", encoding="utf8", newline="\n") as fobj:
-        json.dump(workflow, fobj, indent=2)
+        json.dump(content, fobj, indent=2)
 
 
-def _generate_workflow_check_steps():
-    yield {"name": "Check", "run": "cargo check"}
-    for feature in (*all_arrow2_features, *all_arrow_features):
-        yield {
-            "name": f"Check {feature}",
-            "run": f"cargo check --features {feature}",
-        }
-
-    yield {
-        "name": "Check format",
-        "run": "cargo fmt --check",
-    }
-    yield {
-        "name": "Build",
-        "run": f"cargo build --features {default_features}",
-    }
-    yield {
-        "name": "Test",
-        "run": f"cargo test --features {default_features}",
-    }
+def _workflow_check_steps():
+    return [
+        {
+            "name": "Check format",
+            "run": "cargo fmt --check",
+        },
+        {"name": "Check", "run": "cargo check"},
+        *(
+            {
+                "name": f"Check {feature}",
+                "run": f"cargo check --features {feature}",
+            }
+            for feature in ("serde", *all_arrow2_features, *all_arrow_features)
+        ),
+        {"name": "Check", "run": "cargo check --all-features"},
+        {
+            "name": "Build",
+            "run": f"cargo build --features {default_features}",
+        },
+        {
+            "name": "Test",
+            "run": f"cargo test --features {default_features}",
+        },
+    ]
 
 
 @cmd(help="Format the code")
