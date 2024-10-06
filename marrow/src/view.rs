@@ -1,6 +1,6 @@
 //! Arrays with borrowed data
 //!
-//! The views corresponds 1:1 to the corresponding arrays.
+//! The views correspond 1:1 to the corresponding arrays.
 use half::f16;
 
 use crate::datatypes::{FieldMeta, TimeUnit};
