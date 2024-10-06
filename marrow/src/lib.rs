@@ -91,7 +91,7 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //!
 //! - `serde`: enable Serde serialization / deserialization for schema types
 //!   ([Field][crate::datatypes::Field], [DataType][crate::datatypes::DataType], ...). The format
-//!   will match the one of the `arrow` crate
+//!   will match the `arrow` crate
 //! - `arrow-{version}`: enable conversions between `marrow` and `arrow={version}`
 //! - `arrow2-{version}`: enable conversions between `marrow` and `arrow2={version}`
 //!

@@ -1,4 +1,4 @@
-//! Owned arrays
+//! Arrays with owned data
 use half::f16;
 
 use crate::{datatypes::TimeUnit, meta::FieldMeta};

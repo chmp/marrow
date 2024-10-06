@@ -1,12 +1,10 @@
-//! Views into array data
+//! Arrays with borrowed data
 //!
-//! As each view corresponds 1:1 to the corresponding array, the docs refer to their docs.
+//! The views corresponds 1:1 to the corresponding arrays.
 use half::f16;
 
 use crate::{datatypes::TimeUnit, meta::FieldMeta};
 
-/// A view into the data of an array
-///
 /// See [`Array`][crate::array::Array]
 #[derive(Clone, Debug)]
 #[non_exhaustive]
