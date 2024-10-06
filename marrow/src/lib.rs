@@ -29,7 +29,7 @@
 // arrow-version: replace:     feature = "arrow-{version}",
     feature = "arrow-53",
     doc = r#"
-For example to the data in an arrow array:
+For example to access the data in an arrow array:
 
 ```rust
 # use marrow::_impl::arrow as arrow;
@@ -58,13 +58,14 @@ Or to build an array:
 use arrow::array::Array as _;
 use marrow::array::{Array, PrimitiveArray};
 
+// build the array
 let marrow_array = Array::Int32(PrimitiveArray {
     validity: Some(vec![0b_101]),
     values: vec![4, 0, 6],
 });
 
+// convert it to an arrow array
 let arrow_array_ref = arrow::array::ArrayRef::try_from(marrow_array)?;
-
 assert_eq!(arrow_array_ref.is_null(0), false);
 assert_eq!(arrow_array_ref.is_null(1), true);
 assert_eq!(arrow_array_ref.is_null(2), false);
@@ -88,7 +89,7 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //! conversions can be enabled by selecting the relevant features. Any combination of features can
 //! be selected, e.g., both `arrow-53` and `arrow-52` can be used at the same time.
 //!
-//! Available features:
+//! Supported arrow versions:
 //!
 //! | Feature       | Arrow Version |
 //! |---------------|---------------|
