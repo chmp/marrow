@@ -136,5 +136,7 @@ pub mod meta;
 #[deny(missing_docs)]
 pub mod view;
 
+#[rustfmt::skip]
 mod impl_arrow;
+#[rustfmt::skip]
 mod impl_arrow2;

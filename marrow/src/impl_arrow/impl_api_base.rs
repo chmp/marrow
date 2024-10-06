@@ -10,8 +10,8 @@ use crate::{
     meta::{meta_from_field, FieldMeta},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeListView, ListView, NullView, PrimitiveView, StructView,
-        TimeView, TimestampView, View,
+        FixedSizeListView, ListView, NullView, PrimitiveView, StructView, TimeView, TimestampView,
+        View,
     },
 };
 
@@ -83,7 +83,10 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 }
                 Ok(T::Union(fields, (*mode).try_into()?))
             }
-            data_type => fail!(ErrorKind::Unsupported, "Unsupported arrow data type {data_type}"),
+            data_type => fail!(
+                ErrorKind::Unsupported,
+                "Unsupported arrow data type {data_type}"
+            ),
         }
     }
 }
@@ -237,10 +240,9 @@ impl TryFrom<Array> for Arc<dyn arrow_array::Array> {
     type Error = MarrowError;
 
     fn try_from(value: Array) -> Result<Arc<dyn arrow_array::Array>> {
-        Ok(arrow_array::make_array(build_array_data(value)?)) 
+        Ok(arrow_array::make_array(build_array_data(value)?))
     }
 }
-
 
 fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
     use Array as A;
@@ -265,9 +267,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             vec![arrow_buffer::ScalarBuffer::from(arr.values).into_inner()],
             vec![],
         )?),
-        A::Int8(arr) => {
-            primitive_into_data(arrow_schema::DataType::Int8, arr.validity, arr.values)
-        }
+        A::Int8(arr) => primitive_into_data(arrow_schema::DataType::Int8, arr.validity, arr.values),
         A::Int16(arr) => {
             primitive_into_data(arrow_schema::DataType::Int16, arr.validity, arr.values)
         }
@@ -831,7 +831,8 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
 }
 
 fn field_from_data_and_meta(data: &arrow_data::ArrayData, meta: FieldMeta) -> arrow_schema::Field {
-    arrow_schema::Field::new(meta.name, data.data_type().clone(), meta.nullable).with_metadata(meta.metadata)
+    arrow_schema::Field::new(meta.name, data.data_type().clone(), meta.nullable)
+        .with_metadata(meta.metadata)
 }
 
 fn primitive_into_data<T: arrow_buffer::ArrowNativeType>(

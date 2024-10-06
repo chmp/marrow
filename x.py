@@ -147,6 +147,16 @@ def _workflow_check_steps():
 def format():
     _sh(f"{python} -m black {_q(__file__)}")
     _sh("cargo fmt")
+    # the impl files are not found by cargo fmt
+    _sh(
+        f"""
+        rustfmt
+            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_37.rs')}
+            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_47.rs')}
+            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_base.rs')}
+            {_q(self_path / 'marrow' / 'src' / 'impl_arrow2' / 'impl.rs')}
+    """
+    )
 
 
 @cmd(help="Run the linters")

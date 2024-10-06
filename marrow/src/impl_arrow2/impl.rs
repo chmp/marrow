@@ -23,7 +23,10 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
     type Error = MarrowError;
 
     fn try_from(value: &arrow2::datatypes::DataType) -> Result<DataType> {
-        use {arrow2::datatypes::DataType as AT, DataType as T, Field as F, arrow2::datatypes::IntegerType as I};
+        use {
+            arrow2::datatypes::DataType as AT, arrow2::datatypes::IntegerType as I, DataType as T,
+            Field as F,
+        };
         match value {
             AT::Null => Ok(T::Null),
             AT::Boolean => Ok(T::Boolean),
@@ -46,7 +49,10 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
             AT::Timestamp(unit, tz) => Ok(T::Timestamp((*unit).try_into()?, tz.clone())),
             AT::Decimal(precision, scale) => {
                 if *precision > u8::MAX as usize || *scale > i8::MAX as usize {
-                    fail!(ErrorKind::Unsupported, "cannot represent precision / scale of the decimal");
+                    fail!(
+                        ErrorKind::Unsupported,
+                        "cannot represent precision / scale of the decimal"
+                    );
                 }
                 Ok(T::Decimal128(*precision as u8, *scale as i8))
             }
@@ -104,7 +110,10 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
                 }
                 Ok(T::Union(fields, (*mode).try_into()?))
             }
-            dt => fail!(ErrorKind::Unsupported, "Cannot convert data type {dt:?} to internal data type"),
+            dt => fail!(
+                ErrorKind::Unsupported,
+                "Cannot convert data type {dt:?} to internal data type"
+            ),
         }
     }
 }
@@ -123,13 +132,15 @@ impl TryFrom<&arrow2::datatypes::Field> for Field {
     }
 }
 
-
 /// Conversion to `arrow2` data types (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<&DataType> for arrow2::datatypes::DataType {
     type Error = MarrowError;
 
     fn try_from(value: &DataType) -> std::result::Result<Self, Self::Error> {
-        use {arrow2::datatypes::DataType as AT, arrow2::datatypes::Field as AF, DataType as T, arrow2::datatypes::IntegerType as I};
+        use {
+            arrow2::datatypes::DataType as AT, arrow2::datatypes::Field as AF,
+            arrow2::datatypes::IntegerType as I, DataType as T,
+        };
         match value {
             T::Null => Ok(AT::Null),
             T::Boolean => Ok(AT::Boolean),
@@ -152,7 +163,10 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
             T::Timestamp(unit, tz) => Ok(AT::Timestamp((*unit).try_into()?, tz.clone())),
             T::Decimal128(precision, scale) => {
                 if *scale < 0 {
-                    fail!(ErrorKind::Unsupported, "arrow2 does not support decimals with negative scale");
+                    fail!(
+                        ErrorKind::Unsupported,
+                        "arrow2 does not support decimals with negative scale"
+                    );
                 }
                 Ok(AT::Decimal((*precision).into(), (*scale).try_into()?))
             }
