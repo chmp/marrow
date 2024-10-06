@@ -48,13 +48,13 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
             AT::Date32 => Ok(T::Date32),
             AT::Date64 => Ok(T::Date64),
             AT::Decimal128(precision, scale) => Ok(T::Decimal128(*precision, *scale)),
-            AT::Time32(unit) => Ok(T::Time32(unit.clone().into())),
-            AT::Time64(unit) => Ok(T::Time64(unit.clone().into())),
+            AT::Time32(unit) => Ok(T::Time32(unit.clone().try_into()?)),
+            AT::Time64(unit) => Ok(T::Time64(unit.clone().try_into()?)),
             AT::Timestamp(unit, tz) => Ok(T::Timestamp(
-                unit.clone().into(),
+                unit.clone().try_into()?,
                 tz.as_ref().map(|s| s.to_string()),
             )),
-            AT::Duration(unit) => Ok(T::Duration(unit.clone().into())),
+            AT::Duration(unit) => Ok(T::Duration(unit.clone().try_into()?)),
             AT::Binary => Ok(T::Binary),
             AT::LargeBinary => Ok(T::LargeBinary),
             AT::FixedSizeBinary(n) => Ok(T::FixedSizeBinary(*n)),
@@ -81,7 +81,7 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 for (type_id, field) in in_fields.iter() {
                     fields.push((type_id, F::try_from(field.as_ref())?));
                 }
-                Ok(T::Union(fields, (*mode).into()))
+                Ok(T::Union(fields, (*mode).try_into()?))
             }
             data_type => fail!(ErrorKind::Unsupported, "Unsupported arrow data type {data_type}"),
         }
@@ -127,13 +127,13 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
             T::Date32 => Ok(AT::Date32),
             T::Date64 => Ok(AT::Date64),
             T::Decimal128(precision, scale) => Ok(AT::Decimal128(*precision, *scale)),
-            T::Time32(unit) => Ok(AT::Time32((*unit).into())),
-            T::Time64(unit) => Ok(AT::Time64((*unit).into())),
+            T::Time32(unit) => Ok(AT::Time32((*unit).try_into()?)),
+            T::Time64(unit) => Ok(AT::Time64((*unit).try_into()?)),
             T::Timestamp(unit, tz) => Ok(AT::Timestamp(
-                (*unit).into(),
+                (*unit).try_into()?,
                 tz.as_ref().map(|s| s.to_string().into()),
             )),
-            T::Duration(unit) => Ok(AT::Duration((*unit).into())),
+            T::Duration(unit) => Ok(AT::Duration((*unit).try_into()?)),
             T::Binary => Ok(AT::Binary),
             T::LargeBinary => Ok(AT::LargeBinary),
             T::FixedSizeBinary(n) => Ok(AT::FixedSizeBinary(*n)),
@@ -159,7 +159,7 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
                 for (type_id, field) in in_fields {
                     fields.push((*type_id, Arc::new(AF::try_from(field)?)));
                 }
-                Ok(AT::Union(fields.into_iter().collect(), (*mode).into()))
+                Ok(AT::Union(fields.into_iter().collect(), (*mode).try_into()?))
             }
         }
     }
@@ -187,18 +187,22 @@ macro_rules! impl_from_one_to_one {
             $($src_variant:ident => $dst_variant:ident),*
         ]
     ) => {
-        impl From<$dst_ty> for $src_ty {
-            fn from(value: $dst_ty) -> Self {
+        impl TryFrom<$dst_ty> for $src_ty {
+            type Error = MarrowError;
+
+            fn try_from(value: $dst_ty) -> Result<Self> {
                 match value {
-                    $(<$dst_ty>::$dst_variant => <$src_ty>::$src_variant,)*
+                    $(<$dst_ty>::$dst_variant => Ok(<$src_ty>::$src_variant),)*
                 }
             }
         }
 
-        impl From<$src_ty> for $dst_ty {
-            fn from(value: $src_ty) -> Self {
+        impl TryFrom<$src_ty> for $dst_ty {
+            type Error = MarrowError;
+
+            fn try_from(value: $src_ty) -> Result<Self> {
                 match value {
-                    $(<$src_ty>::$src_variant => <$dst_ty>::$dst_variant,)*
+                    $(<$src_ty>::$src_variant => Ok(<$dst_ty>::$dst_variant),)*
                 }
             }
         }
@@ -287,22 +291,22 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             primitive_into_data(arrow_schema::DataType::Date64, arr.validity, arr.values)
         }
         A::Timestamp(arr) => primitive_into_data(
-            arrow_schema::DataType::Timestamp(arr.unit.into(), arr.timezone.map(String::into)),
+            arrow_schema::DataType::Timestamp(arr.unit.try_into()?, arr.timezone.map(String::into)),
             arr.validity,
             arr.values,
         ),
         A::Time32(arr) => primitive_into_data(
-            arrow_schema::DataType::Time32(arr.unit.into()),
+            arrow_schema::DataType::Time32(arr.unit.try_into()?),
             arr.validity,
             arr.values,
         ),
         A::Time64(arr) => primitive_into_data(
-            arrow_schema::DataType::Time64(arr.unit.into()),
+            arrow_schema::DataType::Time64(arr.unit.try_into()?),
             arr.validity,
             arr.values,
         ),
         A::Duration(arr) => primitive_into_data(
-            arrow_schema::DataType::Duration(arr.unit.into()),
+            arrow_schema::DataType::Duration(arr.unit.try_into()?),
             arr.validity,
             arr.values,
         ),

@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::{
     array::{Array, PrimitiveArray},
     datatypes::{DataType, Field, TimeUnit, UnionMode},
-    error::{MarrowError, ErrorKind, Result, error_with_kind_message_cause, fail},
+    error::{error_with_kind_message_cause, fail, ErrorKind, MarrowError, Result},
     meta::{meta_from_field, FieldMeta},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
@@ -40,10 +40,10 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
             AT::Float64 => Ok(T::Float64),
             AT::Date32 => Ok(T::Date32),
             AT::Date64 => Ok(T::Date64),
-            AT::Time32(unit) => Ok(T::Time32((*unit).into())),
-            AT::Time64(unit) => Ok(T::Time64((*unit).into())),
-            AT::Duration(unit) => Ok(T::Duration((*unit).into())),
-            AT::Timestamp(unit, tz) => Ok(T::Timestamp((*unit).into(), tz.clone())),
+            AT::Time32(unit) => Ok(T::Time32((*unit).try_into()?)),
+            AT::Time64(unit) => Ok(T::Time64((*unit).try_into()?)),
+            AT::Duration(unit) => Ok(T::Duration((*unit).try_into()?)),
+            AT::Timestamp(unit, tz) => Ok(T::Timestamp((*unit).try_into()?, tz.clone())),
             AT::Decimal(precision, scale) => {
                 if *precision > u8::MAX as usize || *scale > i8::MAX as usize {
                     fail!(ErrorKind::Unsupported, "cannot represent precision / scale of the decimal");
@@ -102,7 +102,7 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
                 for (type_id, field) in in_type_ids.iter().zip(in_fields) {
                     fields.push(((*type_id).try_into()?, F::try_from(field)?));
                 }
-                Ok(T::Union(fields, (*mode).into()))
+                Ok(T::Union(fields, (*mode).try_into()?))
             }
             dt => fail!(ErrorKind::Unsupported, "Cannot convert data type {dt:?} to internal data type"),
         }
@@ -146,10 +146,10 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
             T::Float64 => Ok(AT::Float64),
             T::Date32 => Ok(AT::Date32),
             T::Date64 => Ok(AT::Date64),
-            T::Duration(unit) => Ok(AT::Duration((*unit).into())),
-            T::Time32(unit) => Ok(AT::Time32((*unit).into())),
-            T::Time64(unit) => Ok(AT::Time64((*unit).into())),
-            T::Timestamp(unit, tz) => Ok(AT::Timestamp((*unit).into(), tz.clone())),
+            T::Duration(unit) => Ok(AT::Duration((*unit).try_into()?)),
+            T::Time32(unit) => Ok(AT::Time32((*unit).try_into()?)),
+            T::Time64(unit) => Ok(AT::Time64((*unit).try_into()?)),
+            T::Timestamp(unit, tz) => Ok(AT::Timestamp((*unit).try_into()?, tz.clone())),
             T::Decimal128(precision, scale) => {
                 if *scale < 0 {
                     fail!(ErrorKind::Unsupported, "arrow2 does not support decimals with negative scale");
@@ -229,7 +229,7 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
                     fields.push(AF::try_from(field)?);
                     type_ids.push((*type_id).into());
                 }
-                Ok(AT::Union(fields, Some(type_ids), (*mode).into()))
+                Ok(AT::Union(fields, Some(type_ids), (*mode).try_into()?))
             }
         }
     }
@@ -250,45 +250,53 @@ impl TryFrom<&Field> for arrow2::datatypes::Field {
 }
 
 /// Conversion to `arrow2` time units
-impl From<TimeUnit> for arrow2::datatypes::TimeUnit {
-    fn from(value: TimeUnit) -> arrow2::datatypes::TimeUnit {
+impl TryFrom<TimeUnit> for arrow2::datatypes::TimeUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: TimeUnit) -> Result<arrow2::datatypes::TimeUnit> {
         match value {
-            TimeUnit::Second => arrow2::datatypes::TimeUnit::Second,
-            TimeUnit::Millisecond => arrow2::datatypes::TimeUnit::Millisecond,
-            TimeUnit::Microsecond => arrow2::datatypes::TimeUnit::Microsecond,
-            TimeUnit::Nanosecond => arrow2::datatypes::TimeUnit::Nanosecond,
+            TimeUnit::Second => Ok(arrow2::datatypes::TimeUnit::Second),
+            TimeUnit::Millisecond => Ok(arrow2::datatypes::TimeUnit::Millisecond),
+            TimeUnit::Microsecond => Ok(arrow2::datatypes::TimeUnit::Microsecond),
+            TimeUnit::Nanosecond => Ok(arrow2::datatypes::TimeUnit::Nanosecond),
         }
     }
 }
 
 /// Conversion from `arrow2` time units
-impl From<arrow2::datatypes::TimeUnit> for TimeUnit {
-    fn from(value: arrow2::datatypes::TimeUnit) -> TimeUnit {
+impl TryFrom<arrow2::datatypes::TimeUnit> for TimeUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow2::datatypes::TimeUnit) -> Result<TimeUnit> {
         match value {
-            arrow2::datatypes::TimeUnit::Second => TimeUnit::Second,
-            arrow2::datatypes::TimeUnit::Millisecond => TimeUnit::Millisecond,
-            arrow2::datatypes::TimeUnit::Microsecond => TimeUnit::Microsecond,
-            arrow2::datatypes::TimeUnit::Nanosecond => TimeUnit::Nanosecond,
+            arrow2::datatypes::TimeUnit::Second => Ok(TimeUnit::Second),
+            arrow2::datatypes::TimeUnit::Millisecond => Ok(TimeUnit::Millisecond),
+            arrow2::datatypes::TimeUnit::Microsecond => Ok(TimeUnit::Microsecond),
+            arrow2::datatypes::TimeUnit::Nanosecond => Ok(TimeUnit::Nanosecond),
         }
     }
 }
 
 /// Conversion from `arrow2` union modes
-impl From<arrow2::datatypes::UnionMode> for UnionMode {
-    fn from(value: arrow2::datatypes::UnionMode) -> Self {
+impl TryFrom<arrow2::datatypes::UnionMode> for UnionMode {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow2::datatypes::UnionMode) -> Result<Self> {
         match value {
-            arrow2::datatypes::UnionMode::Dense => UnionMode::Dense,
-            arrow2::datatypes::UnionMode::Sparse => UnionMode::Sparse,
+            arrow2::datatypes::UnionMode::Dense => Ok(UnionMode::Dense),
+            arrow2::datatypes::UnionMode::Sparse => Ok(UnionMode::Sparse),
         }
     }
 }
 
 /// Conversion to `arrow2` union modes
-impl From<UnionMode> for arrow2::datatypes::UnionMode {
-    fn from(value: UnionMode) -> Self {
+impl TryFrom<UnionMode> for arrow2::datatypes::UnionMode {
+    type Error = MarrowError;
+
+    fn try_from(value: UnionMode) -> Result<Self> {
         match value {
-            UnionMode::Dense => arrow2::datatypes::UnionMode::Dense,
-            UnionMode::Sparse => arrow2::datatypes::UnionMode::Sparse,
+            UnionMode::Dense => Ok(arrow2::datatypes::UnionMode::Dense),
+            UnionMode::Sparse => Ok(arrow2::datatypes::UnionMode::Sparse),
         }
     }
 }
@@ -328,16 +336,16 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
             A::Date32(arr) => build_primitive_array(AT::Date32, arr.values, arr.validity),
             A::Date64(arr) => build_primitive_array(AT::Date64, arr.values, arr.validity),
             A::Duration(arr) => {
-                build_primitive_array(AT::Duration(arr.unit.into()), arr.values, arr.validity)
+                build_primitive_array(AT::Duration(arr.unit.try_into()?), arr.values, arr.validity)
             }
             A::Time32(arr) => {
-                build_primitive_array(AT::Time32(arr.unit.into()), arr.values, arr.validity)
+                build_primitive_array(AT::Time32(arr.unit.try_into()?), arr.values, arr.validity)
             }
             A::Time64(arr) => {
-                build_primitive_array(AT::Time64(arr.unit.into()), arr.values, arr.validity)
+                build_primitive_array(AT::Time64(arr.unit.try_into()?), arr.values, arr.validity)
             }
             A::Timestamp(arr) => build_primitive_array(
-                AT::Timestamp(arr.unit.into(), arr.timezone),
+                AT::Timestamp(arr.unit.try_into()?, arr.timezone),
                 arr.values,
                 arr.validity,
             ),
@@ -590,7 +598,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 AT::Int32 => Ok(V::Int32(view_primitive_array(array))),
                 AT::Date32 => Ok(V::Date32(view_primitive_array(array))),
                 AT::Time32(unit) => Ok(V::Time32(TimeView {
-                    unit: (*unit).into(),
+                    unit: (*unit).try_into()?,
                     validity: bits_with_offset_from_bitmap(array.validity()),
                     values: array.values().as_slice(),
                 })),
@@ -604,18 +612,18 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 AT::Int64 => Ok(V::Int64(view_primitive_array(array))),
                 AT::Date64 => Ok(V::Date64(view_primitive_array(array))),
                 AT::Timestamp(unit, tz) => Ok(V::Timestamp(TimestampView {
-                    unit: (*unit).into(),
+                    unit: (*unit).try_into()?,
                     timezone: tz.to_owned(),
                     validity: bits_with_offset_from_bitmap(array.validity()),
                     values: array.values().as_slice(),
                 })),
                 AT::Time64(unit) => Ok(V::Time64(TimeView {
-                    unit: (*unit).into(),
+                    unit: (*unit).try_into()?,
                     validity: bits_with_offset_from_bitmap(array.validity()),
                     values: array.values().as_slice(),
                 })),
                 AT::Duration(unit) => Ok(V::Duration(TimeView {
-                    unit: (*unit).into(),
+                    unit: (*unit).try_into()?,
                     validity: bits_with_offset_from_bitmap(array.validity()),
                     values: array.values().as_slice(),
                 })),
