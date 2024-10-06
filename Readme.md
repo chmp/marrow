@@ -1,5 +1,8 @@
 # `marrow` - minimalist Arrow interop
 
+[Crate info](https://crates.io/crates/marrow)
+| [API docs](https://docs.rs/marrow/)
+
 `marrow` allows building and viewing arrow arrays of different implementations using a unified
 interface. The motivation behind `marrow` is to allow libraries to target multiple different arrow
 versions simultaneously.
