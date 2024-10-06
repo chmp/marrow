@@ -357,7 +357,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
                 .build()?)
         }
         A::List(arr) => {
-            let child = build_array_data(*arr.element)?;
+            let child = build_array_data(*arr.elements)?;
             let field = field_from_data_and_meta(&child, arr.meta);
             list_into_data(
                 arrow_schema::DataType::List(Arc::new(field)),
@@ -368,7 +368,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             )
         }
         A::LargeList(arr) => {
-            let child = build_array_data(*arr.element)?;
+            let child = build_array_data(*arr.elements)?;
             let field = field_from_data_and_meta(&child, arr.meta);
             list_into_data(
                 arrow_schema::DataType::LargeList(Arc::new(field)),
@@ -379,7 +379,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             )
         }
         A::FixedSizeList(arr) => {
-            let child = build_array_data(*arr.element)?;
+            let child = build_array_data(*arr.elements)?;
             if (child.len() % usize::try_from(arr.n)?) != 0 {
                 fail!(
                     ErrorKind::Unsupported,
@@ -431,7 +431,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
                 .build()?)
         }
         A::Map(arr) => {
-            let child = build_array_data(*arr.element)?;
+            let child = build_array_data(*arr.elements)?;
             let field = field_from_data_and_meta(&child, arr.meta);
             Ok(arrow_data::ArrayData::try_new(
                 arrow_schema::DataType::Map(Arc::new(field), false),

@@ -131,7 +131,7 @@ pub struct ListArray<O> {
     pub validity: Option<Vec<u8>>,
     pub offsets: Vec<O>,
     pub meta: FieldMeta,
-    pub element: Box<Array>,
+    pub elements: Box<Array>,
 }
 
 /// An array comprised of lists of fixed size
@@ -143,38 +143,59 @@ pub struct FixedSizeListArray {
     pub n: i32,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The metadata of the elements array
     pub meta: FieldMeta,
-    pub element: Box<Array>,
+    /// The values stored in the array
+    pub elements: Box<Array>,
 }
 
+/// An array of bytes with varying sizes
+///
+/// The value of element `i` can be access by the pseudo code `data[offsets[i]..offsets[i + 1]]`
 #[derive(Clone, Debug)]
 pub struct BytesArray<O> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The offsets into the data array the first element is `0`
     pub offsets: Vec<O>,
+    /// The underlying data with all elements concatenated
     pub data: Vec<u8>,
 }
 
+/// An array of byte vectors with fixed length
 #[derive(Clone, Debug)]
 pub struct FixedSizeBinaryArray {
+    /// The number of bytes per element
     pub n: i32,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The data with each element concatenated
     pub data: Vec<u8>,
 }
 
+/// An array of fixed point values
+///
+/// The value of element `i` can be computed by the pseudo code: `values[i] * (10 ** -scale)`
 #[derive(Clone, Debug)]
 pub struct DecimalArray<T> {
+    /// The precision, i.e., the number of digits
     pub precision: u8,
+    /// The scale, i.e., the position of smallest value that can be represented
     pub scale: i8,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The underlying values
     pub values: Vec<T>,
 }
 
+/// An array that deduplicates elements
+///
+/// For element `i`, the value can be looked up by the pseudo code `values[indices[i]]`
 #[derive(Clone, Debug)]
 pub struct DictionaryArray {
+    /// The indices into the values array for each element
     pub indices: Box<Array>,
+    /// The possible values of elements
     pub values: Box<Array>,
 }
 

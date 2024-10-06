@@ -381,14 +381,14 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 AT::List,
                 arr.offsets,
                 arr.meta,
-                (*arr.element).try_into()?,
+                (*arr.elements).try_into()?,
                 arr.validity,
             ),
             A::LargeList(arr) => build_list_array(
                 AT::LargeList,
                 arr.offsets,
                 arr.meta,
-                (*arr.element).try_into()?,
+                (*arr.elements).try_into()?,
                 arr.validity,
             ),
             A::Struct(arr) => {
@@ -410,7 +410,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 )))
             }
             A::Map(arr) => {
-                let child: Box<dyn arrow2::array::Array> = (*arr.element).try_into()?;
+                let child: Box<dyn arrow2::array::Array> = (*arr.elements).try_into()?;
                 let field = field_from_array_and_meta(child.as_ref(), arr.meta);
                 let validity = arr.validity.map(|v| {
                     arrow2::bitmap::Bitmap::from_u8_vec(v, arr.offsets.len().saturating_sub(1))
@@ -444,7 +444,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 )?))
             }
             A::FixedSizeList(arr) => {
-                let child: Box<dyn arrow2::array::Array> = (*arr.element).try_into()?;
+                let child: Box<dyn arrow2::array::Array> = (*arr.elements).try_into()?;
                 let child_field = field_from_array_and_meta(child.as_ref(), arr.meta);
                 let data_type = AT::FixedSizeList(Box::new(child_field), arr.n.try_into()?);
                 let validity = arr
