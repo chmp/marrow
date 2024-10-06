@@ -81,8 +81,8 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //! - `serde`: enable Serde serialization / deserialization for schema types
 //!   ([Field][crate::datatypes::Field], [DataType][crate::datatypes::DataType], ...). The format
 //!   will match the one of the `arrow` crate
-//! - `arrow-{major}`: enable conversions between `arrow={major}` and `marrow`
-//! - `arrow2-0-{minor}`: enable conversions between `arrow2=0.{minor}` and `marrow`
+//! - `arrow-{major}`: enable conversions between `marrow` and `arrow={major}`
+//! - `arrow2-0-{minor}`: enable conversions between `marrow` and `arrow2=0.{minor}`
 //!
 //! This crate supports conversions from and to different version of `arrow` or `arrow2`. These
 //! conversions can be enabled by selecting the relevant features. Any combination of features can
