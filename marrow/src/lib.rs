@@ -4,6 +4,11 @@
 //! interface. The motivation behind `marrow` is to allow libraries to target multiple different
 //! arrow versions simultaneously.
 //!
+//! Supported arrow implementations:
+//!
+//! - [`arrow`](https://docs.rs/arrow/)
+//! - [`arrow2`](https://docs.rs/arrow2)
+//!
 //! The main type are
 //!
 //! - [`Array`][crate::array::Array]: an array with owned data
@@ -123,7 +128,9 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //! | `arrow-37`    | `arrow=37`    |
 //! | `arrow2-0-17` | `arrow2=0.17` |
 //! | `arrow2-0-16` | `arrow2=0.16` |
-
+//!
+//! Note, `arrow2=0.18` is not supported as the source code was not tagged on GitHub.
+//!
 pub mod _impl;
 #[deny(missing_docs)]
 pub mod array;
