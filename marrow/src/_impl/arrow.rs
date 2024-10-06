@@ -10,8 +10,8 @@ pub mod array {
     pub use super::_arrow_array::array::{
         make_array, Array, ArrayRef, ArrowPrimitiveType, BooleanArray, DictionaryArray,
         FixedSizeBinaryArray, FixedSizeListArray, GenericBinaryArray, GenericListArray,
-        GenericStringArray, LargeStringArray, MapArray, NullArray, OffsetSizeTrait, PrimitiveArray,
-        StringArray, StructArray, UnionArray,
+        GenericStringArray, Int32Array, LargeStringArray, MapArray, NullArray, OffsetSizeTrait,
+        PrimitiveArray, StringArray, StructArray, UnionArray,
     };
     pub use super::_arrow_array::RecordBatch;
 }

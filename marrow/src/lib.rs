@@ -25,6 +25,55 @@
 //! - `TryFrom<arrow::datatypes::TimeUnit> for marrow::datatypes::TimeUnit`
 //! - `TryFrom<arrow::datatypes::UnionMode> for marrow::datatypes::UnionMode`
 //!
+#![cfg_attr(
+// arrow-version: replace:     feature = "arrow-{version}",
+    feature = "arrow-53",
+    doc = r#"
+For example to the data in an arrow array:
+
+```rust
+# use marrow::_impl::arrow as arrow;
+# fn main() -> marrow::error::Result<()> {
+use arrow::array::Int32Array;
+use marrow::view::View;
+
+// build the arrow array
+let arrow_array = Int32Array::from(vec![Some(1), Some(2), Some(3)]);
+
+// construct the view into this array
+let marrow_view = View::try_from(&arrow_array as &dyn arrow::array::Array)?;
+
+// access the underlying data
+let View::Int32(marrow_view) = marrow_view else { unreachable!() };
+assert_eq!(marrow_view.values, &[1, 2, 3]);
+#     Ok(())
+# }
+```
+
+Or to build an array:
+
+```rust
+# use marrow::_impl::arrow as arrow;
+# fn main() -> marrow::error::Result<()> {
+use arrow::array::Array as _;
+use marrow::array::{Array, PrimitiveArray};
+
+let marrow_array = Array::Int32(PrimitiveArray {
+    validity: Some(vec![0b_101]),
+    values: vec![4, 0, 6],
+});
+
+let arrow_array_ref = arrow::array::ArrayRef::try_from(marrow_array)?;
+
+assert_eq!(arrow_array_ref.is_null(0), false);
+assert_eq!(arrow_array_ref.is_null(1), true);
+assert_eq!(arrow_array_ref.is_null(2), false);
+#     Ok(())
+# }
+```
+"#
+)]
+//!
 //! ## Features
 //!
 //! Supported features:
