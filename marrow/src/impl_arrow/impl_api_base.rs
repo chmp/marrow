@@ -5,9 +5,8 @@ use half::f16;
 
 use crate::{
     array::Array,
-    datatypes::{DataType, Field, TimeUnit, UnionMode},
+    datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
     error::{fail, ErrorKind, MarrowError, Result},
-    meta::{meta_from_field, FieldMeta},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeListView, ListView, NullView, PrimitiveView, StructView, TimeView, TimestampView,

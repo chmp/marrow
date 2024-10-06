@@ -3,7 +3,7 @@
 //! The views corresponds 1:1 to the corresponding arrays.
 use half::f16;
 
-use crate::{datatypes::TimeUnit, meta::FieldMeta};
+use crate::datatypes::{FieldMeta, TimeUnit};
 
 /// See [`Array`][crate::array::Array]
 #[derive(Clone, Debug)]

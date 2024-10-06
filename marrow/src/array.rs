@@ -1,7 +1,7 @@
 //! Arrays with owned data
 use half::f16;
 
-use crate::{datatypes::TimeUnit, meta::FieldMeta};
+use crate::datatypes::{FieldMeta, TimeUnit};
 
 /// An owned array
 #[derive(Clone, Debug)]

@@ -132,8 +132,6 @@ pub mod datatypes;
 #[deny(missing_docs)]
 pub mod error;
 #[deny(missing_docs)]
-pub mod meta;
-#[deny(missing_docs)]
 pub mod view;
 
 #[rustfmt::skip]

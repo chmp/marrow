@@ -17,6 +17,26 @@ pub struct Field {
     pub metadata: HashMap<String, String>,
 }
 
+/// Metadata for a field (everything but the data type)
+#[derive(Clone, Debug)]
+pub struct FieldMeta {
+    /// The name of the field
+    pub name: String,
+    /// Nullability flag of the field
+    pub nullable: bool,
+    /// Additional metadata of the field
+    pub metadata: HashMap<String, String>,
+}
+
+#[allow(unused)]
+pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
+    FieldMeta {
+        name: field.name,
+        nullable: field.nullable,
+        metadata: field.metadata,
+    }
+}
+
 /// Supported data types
 ///
 #[cfg_attr(

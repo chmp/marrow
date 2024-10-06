@@ -2,9 +2,8 @@ use std::borrow::Cow;
 
 use crate::{
     array::{Array, PrimitiveArray},
-    datatypes::{DataType, Field, TimeUnit, UnionMode},
+    datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
     error::{error_with_kind_message_cause, fail, ErrorKind, MarrowError, Result},
-    meta::{meta_from_field, FieldMeta},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeBinaryView, FixedSizeListView, ListView, NullView, PrimitiveView, StructView,
