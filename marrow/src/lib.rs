@@ -14,23 +14,24 @@
 //! ## Conversions
 //!
 //! `marrow` offers conversions between its types and the types of different arrow versions. See the
-//! [features](#features) section how to enable support.
+//! [features](#features) section how to enable support for a specific version. The following
+//! conversion are implemented.
 //!
 //! From `marrow` to `arrow`:
 //!
-//! - `TryFrom<marrow::array::Array> for arrow::array::ArrayRef`
-//! - `TryFrom<&marrow::datatypes::DataType> for arrow::datatypes::DataType`
-//! - `TryFrom<&marrow::datatypes::Field> for arrow::datatypes::Field`
-//! - `TryFrom<marrow::datatypes::TimeUnit> for arrow::datatypes::TimeUnit`
-//! - `TryFrom<marrow::datatypes::UnionMode> for arrow::datatypes::UnionMode`
+//! - `TryFrom<`[`marrow::array::Array`][crate::array::Array]`> for arrow::array::ArrayRef`
+//! - `TryFrom<&`[`marrow::datatypes::Field`][crate::datatypes::Field]`> for arrow::datatypes::Field`
+//! - `TryFrom<&`[`marrow::datatypes::DataType`][crate::datatypes::DataType]`> for arrow::datatypes::DataType`
+//! - `TryFrom<`[`marrow::datatypes::TimeUnit`][crate::datatypes::TimeUnit]`> for arrow::datatypes::TimeUnit`
+//! - `TryFrom<`[`marrow::datatypes::UnionMode`][crate::datatypes::UnionMode]`> for arrow::datatypes::UnionMode`
 //!
 //! From `arrow` to `marrow`:
 //!
-//! - `TryFrom<&dyn arrow::array::Array> for marrow::view::View<'_>`
-//! - `TryFrom<&arrow::datatypes::DataType> for marrow::datatypes::DataType`
-//! - `TryFrom<&arrow::datatypes::Field> for marrow::datatypes::Field`
-//! - `TryFrom<arrow::datatypes::TimeUnit> for marrow::datatypes::TimeUnit`
-//! - `TryFrom<arrow::datatypes::UnionMode> for marrow::datatypes::UnionMode`
+//! - `TryFrom<&dyn arrow::array::Array> for `[`marrow::view::View<'_>`][crate::view::View]
+//! - `TryFrom<&arrow::datatypes::Field> for `[`marrow::datatypes::Field`][crate::datatypes::Field]
+//! - `TryFrom<&arrow::datatypes::DataType> for `[`marrow::datatypes::DataType`][crate::datatypes::DataType]
+//! - `TryFrom<arrow::datatypes::TimeUnit> for `[`marrow::datatypes::TimeUnit`][crate::datatypes::TimeUnit]
+//! - `TryFrom<arrow::datatypes::UnionMode> for `[`marrow::datatypes::UnionMode`][crate::datatypes::UnionMode]
 //!
 //! For `arrow2` the corresponding conversions are implemented as well.
 //!
