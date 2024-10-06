@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
-/// The meta data of a field
+/// The metadata of a field
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Field {

@@ -122,6 +122,7 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //! | `arrow2-0-16` | `arrow2=0.16` |
 
 pub mod _impl;
+#[deny(missing_docs)]
 pub mod array;
 pub mod datatypes;
 pub mod error;

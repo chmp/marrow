@@ -92,49 +92,67 @@ pub struct BooleanArray {
     pub values: Vec<u8>,
 }
 
+/// An array of primitive values
 #[derive(Clone, Debug)]
 pub struct PrimitiveArray<T> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The values of the array
     pub values: Vec<T>,
 }
 
+/// An array time values (e.g., `"12:53"`)
 #[derive(Debug, Clone)]
 pub struct TimeArray<T> {
+    /// The time unit of the values
     pub unit: TimeUnit,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The values of the array stored as the offsets from midnight
     pub values: Vec<T>,
 }
 
+/// An array of timestamps with an optional timezone
 #[derive(Debug, Clone)]
 
 pub struct TimestampArray {
+    /// The time unit of the values
     pub unit: TimeUnit,
+    /// THe optional timezone
     pub timezone: Option<String>,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The values as UTC timestamps
     pub values: Vec<i64>,
 }
 
+/// An array of structs
 #[derive(Clone, Debug)]
 pub struct StructArray {
+    /// The number of elements in the array
     pub len: usize,
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The fields with their metadata
     pub fields: Vec<(Array, FieldMeta)>,
 }
 
+/// An array of lists
+/// 
+/// The value element `i` is given by the pseudo code `elements[offsets[i]..[offsets[i+1]]`
 #[derive(Clone, Debug)]
 pub struct ListArray<O> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
+    /// The offsets of the elements
     pub offsets: Vec<O>,
+    /// The metadata of the elements array
     pub meta: FieldMeta,
+    /// The values stored in the array
     pub elements: Box<Array>,
 }
 
-/// An array comprised of lists of fixed size
+/// An array of lists of fixed size
 #[derive(Clone, Debug)]
 pub struct FixedSizeListArray {
     /// The number of elements in this array, each a list with `n` children
