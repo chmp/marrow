@@ -64,6 +64,7 @@
 //! | `arrow2-0-17` | `arrow2=0.17` |
 //! | `arrow2-0-16` | `arrow2=0.16` |
 
+pub mod _impl;
 pub mod array;
 pub mod datatypes;
 pub mod error;
