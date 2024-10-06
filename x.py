@@ -153,11 +153,11 @@ def format():
 @arg("--all", action="store_true")
 def check(all=False):
     check_cargo_toml()
-    _sh(f"cargo check --features {default_features}")
-    _sh(f"cargo clippy --features {default_features}")
+    _sh(f"cargo check --all-features")
+    _sh(f"cargo clippy --all-features")
 
     if all:
-        for features in (*all_arrow2_features, *all_arrow_features):
+        for features in ("serde", *all_arrow2_features, *all_arrow_features):
             _sh(f"cargo check --features {features}")
 
 
