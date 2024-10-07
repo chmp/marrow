@@ -21,6 +21,11 @@ pub mod array {
         LargeBinaryArray, LargeStringArray, MapArray, NullArray, StringArray, StructArray,
         UInt16Array, UInt32Array, UInt64Array, UInt8Array, UnionArray,
     };
+
+    // specialized builders
+    pub use super::_arrow_array::builder::{
+        FixedSizeListBuilder, Int32Builder, LargeListBuilder, ListBuilder,
+    };
 }
 pub mod datatypes {
     pub use super::_arrow_array::types::{

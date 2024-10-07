@@ -3,10 +3,15 @@ use std::sync::Arc;
 use super::arrow;
 
 use crate::{
-    array::{Array, BooleanArray, BytesArray, FixedSizeBinaryArray, NullArray, PrimitiveArray},
+    array::{
+        Array, BooleanArray, BytesArray, FixedSizeBinaryArray, FixedSizeListArray, ListArray,
+        NullArray, PrimitiveArray,
+    },
+    datatypes::FieldMeta,
     testing::{view_as, PanicOnError},
     view::{
-        BitsWithOffset, BooleanView, BytesView, FixedSizeBinaryView, NullView, PrimitiveView, View,
+        BitsWithOffset, BooleanView, BytesView, FixedSizeBinaryView, FixedSizeListView, ListView,
+        NullView, PrimitiveView, View,
     },
 };
 
@@ -1010,6 +1015,210 @@ mod fixed_size_binary {
                 n: 3,
                 data: b"foobar\0\0\0\0\0\0",
             },
+        );
+        Ok(())
+    }
+}
+
+mod list {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Int32Builder, ListBuilder};
+
+    // example from the arrow docs
+    fn example() -> ArrayRef {
+        let mut builder = ListBuilder::new(Int32Builder::new());
+
+        builder.append_value([Some(1), Some(2), Some(3)]);
+        builder.append_null();
+        builder.append_value([]);
+        builder.append_value([None]);
+
+        Arc::new(builder.finish()) as ArrayRef
+    }
+
+    #[test]
+    fn non_nullable() -> PanicOnError<()> {
+        let array_via_arrow = example();
+        let array_via_marrow = ArrayRef::try_from(Array::List(ListArray {
+            validity: Some(vec![0b_1101]),
+            offsets: vec![0, 3, 3, 3, 4],
+            meta: FieldMeta {
+                name: String::from("item"),
+                nullable: true,
+                metadata: Default::default(),
+            },
+            elements: Box::new(Array::Int32(PrimitiveArray {
+                validity: Some(vec![0b_0111]),
+                values: vec![1, 2, 3, 0],
+            })),
+        }))?;
+
+        assert_eq!(array_via_arrow.data_type(), array_via_marrow.data_type());
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+
+        assert_eq!(
+            view_as!(View::List, array_via_arrow)?,
+            ListView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_1101]
+                }),
+                offsets: &[0, 3, 3, 3, 4],
+                meta: FieldMeta {
+                    name: String::from("item"),
+                    nullable: true,
+                    metadata: Default::default()
+                },
+                elements: Box::new(View::Int32(PrimitiveView {
+                    validity: Some(BitsWithOffset {
+                        offset: 0,
+                        data: &[0b_0111]
+                    }),
+                    values: &[1, 2, 3, 0]
+                })),
+            }
+        );
+        Ok(())
+    }
+}
+
+mod large_list {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Int32Builder, LargeListBuilder};
+
+    /// example from the arrow docs
+    fn example() -> ArrayRef {
+        let mut builder = LargeListBuilder::new(Int32Builder::new());
+
+        builder.append_value([Some(1), Some(2), Some(3)]);
+        builder.append_null();
+        builder.append_value([]);
+        builder.append_value([None]);
+
+        Arc::new(builder.finish()) as ArrayRef
+    }
+
+    #[test]
+    fn non_nullable() -> PanicOnError<()> {
+        let array_via_arrow = example();
+        let array_via_marrow = ArrayRef::try_from(Array::LargeList(ListArray {
+            validity: Some(vec![0b_1101]),
+            offsets: vec![0, 3, 3, 3, 4],
+            meta: FieldMeta {
+                name: String::from("item"),
+                nullable: true,
+                metadata: Default::default(),
+            },
+            elements: Box::new(Array::Int32(PrimitiveArray {
+                validity: Some(vec![0b_0111]),
+                values: vec![1, 2, 3, 0],
+            })),
+        }))?;
+
+        assert_eq!(array_via_arrow.data_type(), array_via_marrow.data_type());
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+
+        assert_eq!(
+            view_as!(View::LargeList, array_via_arrow)?,
+            ListView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_1101]
+                }),
+                offsets: &[0, 3, 3, 3, 4],
+                meta: FieldMeta {
+                    name: String::from("item"),
+                    nullable: true,
+                    metadata: Default::default()
+                },
+                elements: Box::new(View::Int32(PrimitiveView {
+                    validity: Some(BitsWithOffset {
+                        offset: 0,
+                        data: &[0b_0111]
+                    }),
+                    values: &[1, 2, 3, 0]
+                })),
+            }
+        );
+        Ok(())
+    }
+}
+
+mod fixed_size_list {
+    use super::*;
+
+    use arrow::array::{ArrayRef, FixedSizeListBuilder, Int32Builder};
+
+    // example from the arrow docs
+    fn example() -> ArrayRef {
+        let mut builder = FixedSizeListBuilder::new(Int32Builder::new(), 3);
+
+        //  [[0, 1, 2], null, [3, null, 5], [6, 7, null]]
+        builder.values().append_value(0);
+        builder.values().append_value(1);
+        builder.values().append_value(2);
+        builder.append(true);
+        builder.values().append_null();
+        builder.values().append_null();
+        builder.values().append_null();
+        builder.append(false);
+        builder.values().append_value(3);
+        builder.values().append_null();
+        builder.values().append_value(5);
+        builder.append(true);
+        builder.values().append_value(6);
+        builder.values().append_value(7);
+        builder.values().append_null();
+        builder.append(true);
+
+        Arc::new(builder.finish()) as ArrayRef
+    }
+
+    #[test]
+    fn non_nullable() -> PanicOnError<()> {
+        let array_via_arrow = example();
+        let array_via_marrow = ArrayRef::try_from(Array::FixedSizeList(FixedSizeListArray {
+            len: 4,
+            n: 3,
+            validity: Some(vec![0b_1101]),
+            meta: FieldMeta {
+                name: String::from("item"),
+                nullable: true,
+                metadata: Default::default(),
+            },
+            elements: Box::new(Array::Int32(PrimitiveArray {
+                validity: Some(vec![0b_01_000_111, 0b_011_1]),
+                values: vec![0, 1, 2, 0, 0, 0, 3, 0, 5, 6, 7, 0],
+            })),
+        }))?;
+
+        assert_eq!(array_via_arrow.data_type(), array_via_marrow.data_type());
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+
+        assert_eq!(
+            view_as!(View::FixedSizeList, array_via_arrow)?,
+            FixedSizeListView {
+                len: 4,
+                n: 3,
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_1101]
+                }),
+                meta: FieldMeta {
+                    name: String::from("item"),
+                    nullable: true,
+                    metadata: Default::default()
+                },
+                elements: Box::new(View::Int32(PrimitiveView {
+                    validity: Some(BitsWithOffset {
+                        offset: 0,
+                        data: &[0b_01_000_111, 0b_011_1],
+                    }),
+                    values: &[0, 1, 2, 0, 0, 0, 3, 0, 5, 6, 7, 0]
+                })),
+            }
         );
         Ok(())
     }
