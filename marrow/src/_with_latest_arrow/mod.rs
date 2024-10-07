@@ -5,4 +5,7 @@
 pub mod arrow;
 
 #[cfg(test)]
-mod test;
+mod test_arrays;
+
+#[cfg(test)]
+mod test_data_types;

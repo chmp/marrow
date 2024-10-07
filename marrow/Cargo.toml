@@ -127,3 +127,5 @@ arrow2-0-17 = { package = "arrow2", version = "0.17", optional = true, default-f
 arrow2-0-16 = { package = "arrow2", version = "0.16", optional = true, default-features = false }
 
 bytemuck = { version = "1", optional = true, default-features = false }
+
+[dev-dependencies]
