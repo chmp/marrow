@@ -3,8 +3,14 @@ use half::f16;
 
 use crate::datatypes::{FieldMeta, TimeUnit};
 
+// assert that the `Array` implements the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
+    impl AssertExpectedTraits for Array {}
+};
+
 /// An array with owned data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Array {
     /// An array without data
@@ -74,14 +80,14 @@ pub enum Array {
 }
 
 /// An array without data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct NullArray {
     /// The len of the array
     pub len: usize,
 }
 
 /// A `bool` array
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BooleanArray {
     // Note: len is required to know how many bits of values are used
     /// The len of the array
@@ -93,7 +99,7 @@ pub struct BooleanArray {
 }
 
 /// An array of primitive values
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveArray<T> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
@@ -102,7 +108,7 @@ pub struct PrimitiveArray<T> {
 }
 
 /// An array time values (e.g., `"12:53"`)
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TimeArray<T> {
     /// The time unit of the values
     pub unit: TimeUnit,
@@ -113,7 +119,7 @@ pub struct TimeArray<T> {
 }
 
 /// An array of timestamps with an optional timezone
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 
 pub struct TimestampArray {
     /// The time unit of the values
@@ -127,7 +133,7 @@ pub struct TimestampArray {
 }
 
 /// An array of structs
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StructArray {
     /// The number of elements in the array
     pub len: usize,
@@ -140,7 +146,7 @@ pub struct StructArray {
 /// An array of lists
 ///
 /// The value element `i` is given by the pseudo code `elements[offsets[i]..[offsets[i+1]]`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListArray<O> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
@@ -153,7 +159,7 @@ pub struct ListArray<O> {
 }
 
 /// An array of lists of fixed size
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeListArray {
     /// The number of elements in this array, each a list with `n` children
     pub len: usize,
@@ -170,7 +176,7 @@ pub struct FixedSizeListArray {
 /// An array of bytes with varying sizes
 ///
 /// The value of element `i` can be access by the pseudo code `data[offsets[i]..offsets[i + 1]]`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BytesArray<O> {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
@@ -181,7 +187,7 @@ pub struct BytesArray<O> {
 }
 
 /// An array of byte vectors with fixed length
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeBinaryArray {
     /// The number of bytes per element
     pub n: i32,
@@ -194,7 +200,7 @@ pub struct FixedSizeBinaryArray {
 /// An array of fixed point values
 ///
 /// The value of element `i` can be computed by the pseudo code: `values[i] * (10 ** -scale)`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DecimalArray<T> {
     /// The precision, i.e., the number of digits
     pub precision: u8,
@@ -209,7 +215,7 @@ pub struct DecimalArray<T> {
 /// An array that deduplicates elements
 ///
 /// For element `i`, the value can be looked up by the pseudo code `values[indices[i]]`
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DictionaryArray {
     /// The indices into the values array for each element
     pub indices: Box<Array>,
@@ -223,7 +229,7 @@ pub struct DictionaryArray {
 /// underlying array to use. For fast lookups the offsets into the underlying arrays are stored as
 /// well. For element `ì`, the value can be looked up by the pseudo code
 /// `fields[types[i]].1[offsets[i]]`.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DenseUnionArray {
     /// The type of each element
     pub types: Vec<i8>,

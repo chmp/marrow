@@ -3,6 +3,14 @@ use std::collections::HashMap;
 
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
+// assert that the `Field, FieldMeta, DataType` implement the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
+    impl AssertExpectedTraits for Field {}
+    impl AssertExpectedTraits for FieldMeta {}
+    impl AssertExpectedTraits for DataType {}
+};
+
 /// The data type and metadata of a field
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -18,7 +26,7 @@ pub struct Field {
 }
 
 /// Metadata for a field (everything but the data type)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FieldMeta {
     /// The name of the field
     pub name: String,

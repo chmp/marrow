@@ -5,10 +5,16 @@ use half::f16;
 
 use crate::datatypes::{FieldMeta, TimeUnit};
 
+// assert that the `Array` implements the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
+    impl<'a> AssertExpectedTraits for View<'a> {}
+};
+
 /// An array with borrowed data
 ///
 /// See [`Array`][crate::array::Array]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum View<'a> {
     /// See [`Array::Null`][crate::array::Array::Null]
@@ -80,7 +86,7 @@ pub enum View<'a> {
 /// A bitmap with an optional offset
 ///
 /// The `i`-th element is stored at bit `offset + i`.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct BitsWithOffset<'a> {
     /// The offset of the bits
     pub offset: usize,
@@ -89,14 +95,14 @@ pub struct BitsWithOffset<'a> {
 }
 
 /// See [`NullArray`][crate::array::NullArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct NullView {
     /// See [`NullArray::len`][crate::array::NullArray::len]
     pub len: usize,
 }
 
 /// See [`BooleanArray`][crate::array::BooleanArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BooleanView<'a> {
     /// See [`BooleanArray::len`][crate::array::BooleanArray::len]
     pub len: usize,
@@ -107,7 +113,7 @@ pub struct BooleanView<'a> {
 }
 
 /// See [`PrimitiveArray`][crate::array::PrimitiveArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveView<'a, T> {
     /// See [`PrimitiveArray::validity`][crate::array::PrimitiveArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
@@ -116,7 +122,7 @@ pub struct PrimitiveView<'a, T> {
 }
 
 /// See [`TimeArray`][crate::array::TimeArray]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TimeView<'a, T> {
     /// See [`TimeArray::unit`][crate::array::TimeArray::unit]
     pub unit: TimeUnit,
@@ -127,7 +133,7 @@ pub struct TimeView<'a, T> {
 }
 
 /// See [`TimestampArray`][crate::array::TimestampArray]
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TimestampView<'a> {
     /// See [`TimestampArray::unit`][crate::array::TimestampArray::unit]
     pub unit: TimeUnit,
@@ -140,7 +146,7 @@ pub struct TimestampView<'a> {
 }
 
 /// See [`StructArray`][crate::array::StructArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct StructView<'a> {
     /// See [`StructArray::len`][crate::array::StructArray::len]
     pub len: usize,
@@ -151,7 +157,7 @@ pub struct StructView<'a> {
 }
 
 /// See [`ListArray`][crate::array::ListArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct ListView<'a, O> {
     /// See [`ListArray::validity`][crate::array::ListArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
@@ -164,7 +170,7 @@ pub struct ListView<'a, O> {
 }
 
 /// See [`FixedSizeListArray`][crate::array::FixedSizeListArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeListView<'a> {
     /// See [`FixedSizeListArray::len`][crate::array::FixedSizeListArray::len]
     pub len: usize,
@@ -179,7 +185,7 @@ pub struct FixedSizeListView<'a> {
 }
 
 /// See [`BytesArray`][crate::array::BytesArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BytesView<'a, O> {
     /// See [`BytesArray::validity`][crate::array::BytesArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
@@ -190,7 +196,7 @@ pub struct BytesView<'a, O> {
 }
 
 /// See [`FixedSizeBinaryArray`][crate::array::FixedSizeBinaryArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeBinaryView<'a> {
     /// See [`FixedSizeBinaryArray::n`][crate::array::FixedSizeBinaryArray::n]
     pub n: i32,
@@ -201,7 +207,7 @@ pub struct FixedSizeBinaryView<'a> {
 }
 
 /// See [`DecimalArray`][crate::array::DecimalArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DecimalView<'a, T> {
     /// See [`DecimalArray::precision`][crate::array::DecimalArray::precision]
     pub precision: u8,
@@ -214,7 +220,7 @@ pub struct DecimalView<'a, T> {
 }
 
 /// See [`DictionaryArray`][crate::array::DictionaryArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DictionaryView<'a> {
     /// See [`DictionaryArray::indices`][crate::array::DictionaryArray::indices]
     pub indices: Box<View<'a>>,
@@ -223,7 +229,7 @@ pub struct DictionaryView<'a> {
 }
 
 /// See [`DenseUnionArray`][crate::array::DenseUnionArray]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct DenseUnionView<'a> {
     /// See [`DenseUnionArray::types`][crate::array::DenseUnionArray::types]
     pub types: &'a [i8],
