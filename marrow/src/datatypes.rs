@@ -51,7 +51,7 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
 // arrow-version: replace:     feature = "arrow-{version}",
     feature = "arrow-53",
     doc = r#"
-See also [`arrow::datatypes::DataType`][crate::_impl::arrow::datatypes::DataType]
+See also [`arrow::datatypes::DataType`][crate::_with_latest_arrow::arrow::datatypes::DataType]
 "#,
 )]
 #[derive(Debug, Clone, PartialEq, Eq)]
