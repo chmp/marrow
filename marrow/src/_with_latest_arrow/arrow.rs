@@ -1,4 +1,5 @@
 //! a module that mirrors the arrow package for the most recent release
+#![allow(unused)]
 
 // arrow-version: replace: use arrow_array_{version} as _arrow_array;
 use arrow_array_53 as _arrow_array;
@@ -10,10 +11,16 @@ pub mod array {
     pub use super::_arrow_array::array::{
         make_array, Array, ArrayRef, ArrowPrimitiveType, BooleanArray, DictionaryArray,
         FixedSizeBinaryArray, FixedSizeListArray, GenericBinaryArray, GenericListArray,
-        GenericStringArray, Int32Array, LargeStringArray, MapArray, NullArray, OffsetSizeTrait,
-        PrimitiveArray, StringArray, StructArray, UnionArray,
+        GenericStringArray, MapArray, NullArray, OffsetSizeTrait, PrimitiveArray, StructArray,
+        UnionArray,
     };
     pub use super::_arrow_array::RecordBatch;
+
+    // specialized arrays
+    pub use super::_arrow_array::array::{
+        Int16Array, Int32Array, Int64Array, Int8Array, LargeStringArray, StringArray, UInt16Array,
+        UInt32Array, UInt64Array, UInt8Array,
+    };
 }
 pub mod datatypes {
     pub use super::_arrow_array::types::{
