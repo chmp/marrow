@@ -9,17 +9,17 @@ use arrow_schema_53 as _arrow_schema;
 
 pub mod array {
     pub use super::_arrow_array::array::{
-        make_array, Array, ArrayRef, ArrowPrimitiveType, BooleanArray, DictionaryArray,
-        FixedSizeBinaryArray, FixedSizeListArray, GenericBinaryArray, GenericListArray,
-        GenericStringArray, MapArray, OffsetSizeTrait, PrimitiveArray, StructArray, UnionArray,
+        make_array, Array, ArrayRef, ArrowPrimitiveType, DictionaryArray, GenericBinaryArray,
+        GenericListArray, GenericStringArray, OffsetSizeTrait, PrimitiveArray,
     };
     pub use super::_arrow_array::RecordBatch;
 
     // specialized arrays
     pub use super::_arrow_array::array::{
-        BinaryArray, Float16Array, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array,
-        Int8Array, LargeBinaryArray, LargeStringArray, NullArray, StringArray, UInt16Array,
-        UInt32Array, UInt64Array, UInt8Array,
+        BinaryArray, BooleanArray, FixedSizeBinaryArray, FixedSizeListArray, Float16Array,
+        Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
+        LargeBinaryArray, LargeStringArray, MapArray, NullArray, StringArray, StructArray,
+        UInt16Array, UInt32Array, UInt64Array, UInt8Array, UnionArray,
     };
 }
 pub mod datatypes {

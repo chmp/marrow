@@ -3,9 +3,11 @@ use std::sync::Arc;
 use super::arrow;
 
 use crate::{
-    array::{Array, BooleanArray, BytesArray, NullArray, PrimitiveArray},
+    array::{Array, BooleanArray, BytesArray, FixedSizeBinaryArray, NullArray, PrimitiveArray},
     testing::{view_as, PanicOnError},
-    view::{BitsWithOffset, BooleanView, BytesView, NullView, PrimitiveView, View},
+    view::{
+        BitsWithOffset, BooleanView, BytesView, FixedSizeBinaryView, NullView, PrimitiveView, View,
+    },
 };
 
 fn as_array_ref<A: arrow::array::Array + 'static>(values: impl Into<A>) -> arrow::array::ArrayRef {
@@ -947,6 +949,66 @@ mod large_binary {
                 }),
                 offsets: &[0, 3, 6, 6, 6, 11],
                 data: b"foobarworld",
+            },
+        );
+        Ok(())
+    }
+}
+
+mod fixed_size_binary {
+    use super::*;
+
+    use arrow::array::ArrayRef;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::FixedSizeBinaryArray>(vec![
+            b"foo" as &[u8],
+            b"bar",
+            b"baz",
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::FixedSizeBinary(FixedSizeBinaryArray {
+            validity: None,
+            n: 3,
+            data: b"foobarbaz".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::FixedSizeBinary, array_via_arrow)?,
+            FixedSizeBinaryView {
+                validity: None,
+                n: 3,
+                data: b"foobarbaz",
+            },
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::FixedSizeBinaryArray>(vec![
+            Some(b"foo" as &[u8]),
+            Some(b"bar"),
+            None,
+            None,
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::FixedSizeBinary(FixedSizeBinaryArray {
+            validity: Some(vec![0b_0011]),
+            n: 3,
+            data: b"foobar\0\0\0\0\0\0".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::FixedSizeBinary, array_via_arrow)?,
+            FixedSizeBinaryView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_0011],
+                }),
+                n: 3,
+                data: b"foobar\0\0\0\0\0\0",
             },
         );
         Ok(())
