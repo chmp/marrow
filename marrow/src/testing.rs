@@ -1,3 +1,5 @@
+//! Helpers for tests
+
 /// Helper to view an as the given variant
 macro_rules! view_as {
     ($variant:path, $array_ref:expr) => {
