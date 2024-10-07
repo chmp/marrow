@@ -9,7 +9,7 @@
 //! - [`arrow`](https://docs.rs/arrow/)
 //! - [`arrow2`](https://docs.rs/arrow2)
 //!
-//! The main type are
+//! The main types are
 //!
 //! - [`Array`][crate::array::Array]: an array with owned data
 //! - [`View`][crate::view::View]: an array with borrowed data
