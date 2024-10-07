@@ -826,3 +826,129 @@ mod large_utf8 {
         Ok(())
     }
 }
+
+mod binary {
+    use super::*;
+
+    use arrow::array::ArrayRef;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::BinaryArray>(vec![
+            b"foo" as &[u8],
+            b"bar",
+            b"baz",
+            b"hello",
+            b"world",
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::Binary(BytesArray {
+            validity: None,
+            offsets: vec![0, 3, 6, 9, 14, 19],
+            data: b"foobarbazhelloworld".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Binary, array_via_arrow)?,
+            BytesView {
+                validity: None,
+                offsets: &[0, 3, 6, 9, 14, 19],
+                data: b"foobarbazhelloworld",
+            },
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::BinaryArray>(vec![
+            Some(b"foo" as &[u8]),
+            Some(b"bar"),
+            None,
+            None,
+            Some(b"world"),
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::Binary(BytesArray {
+            validity: Some(vec![0b_10011]),
+            offsets: vec![0, 3, 6, 6, 6, 11],
+            data: b"foobarworld".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Binary, array_via_arrow)?,
+            BytesView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_10011],
+                }),
+                offsets: &[0, 3, 6, 6, 6, 11],
+                data: b"foobarworld",
+            },
+        );
+        Ok(())
+    }
+}
+
+mod large_binary {
+    use super::*;
+
+    use arrow::array::ArrayRef;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::LargeBinaryArray>(vec![
+            b"foo" as &[u8],
+            b"bar",
+            b"baz",
+            b"hello",
+            b"world",
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::LargeBinary(BytesArray {
+            validity: None,
+            offsets: vec![0, 3, 6, 9, 14, 19],
+            data: b"foobarbazhelloworld".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::LargeBinary, array_via_arrow)?,
+            BytesView {
+                validity: None,
+                offsets: &[0, 3, 6, 9, 14, 19],
+                data: b"foobarbazhelloworld",
+            },
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::LargeBinaryArray>(vec![
+            Some(b"foo" as &[u8]),
+            Some(b"bar"),
+            None,
+            None,
+            Some(b"world"),
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::LargeBinary(BytesArray {
+            validity: Some(vec![0b_10011]),
+            offsets: vec![0, 3, 6, 6, 6, 11],
+            data: b"foobarworld".to_vec(),
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::LargeBinary, array_via_arrow)?,
+            BytesView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_10011],
+                }),
+                offsets: &[0, 3, 6, 6, 6, 11],
+                data: b"foobarworld",
+            },
+        );
+        Ok(())
+    }
+}

@@ -17,9 +17,9 @@ pub mod array {
 
     // specialized arrays
     pub use super::_arrow_array::array::{
-        Float16Array, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
-        LargeStringArray, NullArray, StringArray, UInt16Array, UInt32Array, UInt64Array,
-        UInt8Array,
+        BinaryArray, Float16Array, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array,
+        Int8Array, LargeBinaryArray, LargeStringArray, NullArray, StringArray, UInt16Array,
+        UInt32Array, UInt64Array, UInt8Array,
     };
 }
 pub mod datatypes {
