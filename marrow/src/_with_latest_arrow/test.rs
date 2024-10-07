@@ -3,9 +3,9 @@ use std::sync::Arc;
 use super::arrow;
 
 use crate::{
-    array::{Array, BytesArray, PrimitiveArray},
+    array::{Array, BooleanArray, BytesArray, NullArray, PrimitiveArray},
     testing::{view_as, PanicOnError},
-    view::{BitsWithOffset, BytesView, PrimitiveView, View},
+    view::{BitsWithOffset, BooleanView, BytesView, NullView, PrimitiveView, View},
 };
 
 fn as_array_ref<A: arrow::array::Array + 'static>(values: impl Into<A>) -> arrow::array::ArrayRef {
@@ -79,6 +79,87 @@ fn slicing() -> PanicOnError<()> {
     Ok(())
 }
 
+mod null {
+    use super::*;
+
+    use arrow::array::ArrayRef;
+
+    #[test]
+    fn example() -> PanicOnError<()> {
+        let array_via_arrow = Arc::new(arrow::array::NullArray::new(3)) as ArrayRef;
+        let array_via_marrow = ArrayRef::try_from(Array::Null(NullArray { len: 3 }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(view_as!(View::Null, array_via_arrow)?, NullView { len: 3 });
+
+        Ok(())
+    }
+}
+
+mod boolean {
+    use super::*;
+
+    use arrow::array::ArrayRef;
+
+    #[test]
+    fn non_nullable() -> PanicOnError<()> {
+        let array_via_arrow =
+            as_array_ref::<arrow::array::BooleanArray>(vec![true, true, false, false, false]);
+        let array_via_marrow = ArrayRef::try_from(Array::Boolean(BooleanArray {
+            len: 5,
+            validity: None,
+            values: vec![0b_00011],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Boolean, array_via_arrow)?,
+            BooleanView {
+                len: 5,
+                validity: None,
+                values: BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_00011]
+                },
+            },
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<arrow::array::BooleanArray>(vec![
+            Some(true),
+            None,
+            None,
+            Some(false),
+            Some(false),
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::Boolean(BooleanArray {
+            len: 5,
+            validity: Some(vec![0b_11001]),
+            values: vec![0b_000001],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Boolean, array_via_arrow)?,
+            BooleanView {
+                len: 5,
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_11001]
+                }),
+                values: BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_00001]
+                },
+            },
+        );
+        Ok(())
+    }
+}
+
 mod int8 {
     use super::*;
 
@@ -98,7 +179,7 @@ mod int8 {
             PrimitiveView {
                 validity: None,
                 values: &[1, -2, 3, -4],
-            }
+            },
         );
         Ok(())
     }
@@ -475,6 +556,161 @@ mod uint64 {
                 }),
                 values: &[1, 2, 0, 0],
             },
+        );
+        Ok(())
+    }
+}
+
+mod float16 {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Float16Array};
+    use half::f16;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<Float16Array>(vec![
+            f16::from_f64(13.0),
+            f16::from_f64(21.0),
+            f16::from_f64(42.0),
+        ]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float16(PrimitiveArray {
+            validity: None,
+            values: vec![
+                f16::from_f64(13.0),
+                f16::from_f64(21.0),
+                f16::from_f64(42.0),
+            ],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float16, array_via_arrow)?,
+            PrimitiveView {
+                validity: None,
+                values: &[
+                    f16::from_f64(13.0),
+                    f16::from_f64(21.0),
+                    f16::from_f64(42.0)
+                ],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow =
+            as_array_ref::<Float16Array>(vec![None, None, Some(f16::from_f64(42.0))]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float16(PrimitiveArray {
+            validity: Some(vec![0b_100]),
+            values: vec![f16::from_f64(0.0), f16::from_f64(0.0), f16::from_f64(42.0)],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float16, array_via_arrow)?,
+            PrimitiveView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_100]
+                }),
+                values: &[f16::from_f64(0.0), f16::from_f64(0.0), f16::from_f64(42.0)],
+            }
+        );
+        Ok(())
+    }
+}
+
+mod float32 {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Float32Array};
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<Float32Array>(vec![13.0, 21.0, 42.0]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float32(PrimitiveArray {
+            validity: None,
+            values: vec![13.0, 21.0, 42.0],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float32, array_via_arrow)?,
+            PrimitiveView {
+                validity: None,
+                values: &[13.0, 21.0, 42.0],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<Float32Array>(vec![None, None, Some(42.0)]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float32(PrimitiveArray {
+            validity: Some(vec![0b_100]),
+            values: vec![0.0, 0.0, 42.0],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float32, array_via_arrow)?,
+            PrimitiveView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_100]
+                }),
+                values: &[0.0, 0.0, 42.0],
+            }
+        );
+        Ok(())
+    }
+}
+
+mod float64 {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Float64Array};
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<Float64Array>(vec![13.0, 21.0, 42.0]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float64(PrimitiveArray {
+            validity: None,
+            values: vec![13.0, 21.0, 42.0],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float64, array_via_arrow)?,
+            PrimitiveView {
+                validity: None,
+                values: &[13.0, 21.0, 42.0],
+            }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        let array_via_arrow = as_array_ref::<Float64Array>(vec![None, None, Some(42.0)]);
+        let array_via_marrow = ArrayRef::try_from(Array::Float64(PrimitiveArray {
+            validity: Some(vec![0b_100]),
+            values: vec![0.0, 0.0, 42.0],
+        }))?;
+
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+        assert_eq!(
+            view_as!(View::Float64, array_via_arrow)?,
+            PrimitiveView {
+                validity: Some(BitsWithOffset {
+                    offset: 0,
+                    data: &[0b_100]
+                }),
+                values: &[0.0, 0.0, 42.0],
+            }
         );
         Ok(())
     }

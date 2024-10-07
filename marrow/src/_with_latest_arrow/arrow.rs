@@ -11,15 +11,15 @@ pub mod array {
     pub use super::_arrow_array::array::{
         make_array, Array, ArrayRef, ArrowPrimitiveType, BooleanArray, DictionaryArray,
         FixedSizeBinaryArray, FixedSizeListArray, GenericBinaryArray, GenericListArray,
-        GenericStringArray, MapArray, NullArray, OffsetSizeTrait, PrimitiveArray, StructArray,
-        UnionArray,
+        GenericStringArray, MapArray, OffsetSizeTrait, PrimitiveArray, StructArray, UnionArray,
     };
     pub use super::_arrow_array::RecordBatch;
 
     // specialized arrays
     pub use super::_arrow_array::array::{
-        Int16Array, Int32Array, Int64Array, Int8Array, LargeStringArray, StringArray, UInt16Array,
-        UInt32Array, UInt64Array, UInt8Array,
+        Float16Array, Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
+        LargeStringArray, NullArray, StringArray, UInt16Array, UInt32Array, UInt64Array,
+        UInt8Array,
     };
 }
 pub mod datatypes {
