@@ -5,7 +5,7 @@ use super::super::arrow;
 use crate::{
     array::{
         Array, BooleanArray, BytesArray, DenseUnionArray, FixedSizeBinaryArray, FixedSizeListArray,
-        ListArray, NullArray, PrimitiveArray, TimeArray,
+        ListArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
     },
     datatypes::{FieldMeta, TimeUnit},
     testing::{view_as, PanicOnError},
@@ -775,6 +775,280 @@ mod duration_nanosecond {
             ]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Nanosecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_second {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampSecondArray>(vec![1, 2, 3]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Second,
+                timezone: None,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampSecondArray>(vec![None, None, Some(3), Some(4)]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Second,
+                timezone: None,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_second_utc {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(arrow::array::TimestampSecondArray::from(vec![1, 2, 3]).with_timezone("UTC"))
+                as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Second,
+                timezone: Some(String::from("UTC")),
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampSecondArray::from(vec![None, None, Some(3), Some(4)])
+                    .with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Second,
+                timezone: Some(String::from("UTC")),
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_millisecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampMillisecondArray>(vec![1, 2, 3]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Millisecond,
+                timezone: None,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampMillisecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Millisecond,
+                timezone: None,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_millisecond_utc {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampMillisecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Millisecond,
+                timezone: Some(String::from("UTC")),
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampMillisecondArray::from(vec![None, None, Some(3), Some(4)])
+                    .with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Millisecond,
+                timezone: Some(String::from("UTC")),
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_microsecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampMicrosecondArray>(vec![1, 2, 3]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Microsecond,
+                timezone: None,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampMicrosecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Microsecond,
+                timezone: None,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_microsecond_utc {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampMicrosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Microsecond,
+                timezone: Some(String::from("UTC")),
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampMicrosecondArray::from(vec![None, None, Some(3), Some(4)])
+                    .with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Microsecond,
+                timezone: Some(String::from("UTC")),
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_nanosecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampNanosecondArray>(vec![1, 2, 3]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Nanosecond,
+                timezone: None,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::TimestampNanosecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Nanosecond,
+                timezone: None,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod timestamp_nanosecond_utc {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampNanosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Nanosecond,
+                timezone: Some(String::from("UTC")),
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow::array::TimestampNanosecondArray::from(vec![None, None, Some(3), Some(4)])
+                    .with_timezone("UTC"),
+            ) as arrow::array::ArrayRef,
+            Array::Timestamp(TimestampArray {
+                unit: TimeUnit::Nanosecond,
+                timezone: Some(String::from("UTC")),
                 validity: Some(vec![0b_1100]),
                 values: vec![0, 0, 3, 4],
             }),
