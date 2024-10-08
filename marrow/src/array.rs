@@ -158,10 +158,10 @@ impl BooleanArray {
     pub fn as_view(&self) -> BooleanView<'_> {
         BooleanView {
             len: self.len,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             values: BitsWithOffset {
                 offset: 0,
                 data: &self.values,
@@ -183,10 +183,10 @@ impl<T> PrimitiveArray<T> {
     /// Get the view for this array
     pub fn as_view(&self) -> PrimitiveView<'_, T> {
         PrimitiveView {
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             values: &self.values,
         }
     }
@@ -208,10 +208,10 @@ impl<T> TimeArray<T> {
     pub fn as_view(&self) -> TimeView<'_, T> {
         TimeView {
             unit: self.unit,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             values: &self.values,
         }
     }
@@ -237,10 +237,10 @@ impl TimestampArray {
         TimestampView {
             unit: self.unit,
             timezone: self.timezone.clone(),
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             values: &self.values,
         }
     }
@@ -262,10 +262,10 @@ impl StructArray {
     pub fn as_view(&self) -> StructView<'_> {
         StructView {
             len: self.len,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             fields: self
                 .fields
                 .iter()
@@ -294,10 +294,10 @@ impl MapArray {
     /// Get the view for this array
     pub fn as_view(&self) -> MapView<'_> {
         MapView {
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             offsets: &self.offsets,
             meta: self.meta.clone(),
             keys: Box::new(self.keys.as_view()),
@@ -353,10 +353,10 @@ impl<O> ListArray<O> {
     /// Get the view for this array
     pub fn as_view(&self) -> ListView<'_, O> {
         ListView {
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             offsets: &self.offsets,
             meta: self.meta.clone(),
             elements: Box::new(self.elements.as_view()),
@@ -385,10 +385,10 @@ impl FixedSizeListArray {
         FixedSizeListView {
             len: self.len,
             n: self.n,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             meta: self.meta.clone(),
             elements: Box::new(self.elements.as_view()),
         }
@@ -412,10 +412,10 @@ impl<O> BytesArray<O> {
     /// Get the view for this array
     pub fn as_view(&self) -> BytesView<'_, O> {
         BytesView {
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             offsets: &self.offsets,
             data: &self.data,
         }
@@ -438,10 +438,10 @@ impl FixedSizeBinaryArray {
     pub fn as_view(&self) -> FixedSizeBinaryView<'_> {
         FixedSizeBinaryView {
             n: self.n,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             data: &self.data,
         }
     }
@@ -468,10 +468,10 @@ impl<T> DecimalArray<T> {
         DecimalView {
             precision: self.precision,
             scale: self.scale,
-            validity: self.validity.as_ref().map(|values| BitsWithOffset {
-                offset: 0,
-                data: values,
-            }),
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
             values: &self.values,
         }
     }
