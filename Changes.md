@@ -2,9 +2,11 @@
 
 ## 0.2.0
 
+- Place metadata in front of arrays in `StructArray::fields`, `DenseUnionArray::fields`
+- Rework map arrays to use explicit keys and values array to simplify interaction the underlying
+  arrays
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`
 - Implement `Default` for `Field` and `FieldMeta`
-- Place metadata in front of arrays in `StructArray::fields`, `DenseUnionArray::fields`
 - Add `as_view` for `Array` and the array structs
 
 ## 0.1.0

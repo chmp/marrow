@@ -61,6 +61,61 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
     }
 }
 
+/// Metadata for map arrays
+///
+/// ```rust
+/// # use marrow::datatypes::{FieldMeta, MapMeta};
+/// assert_eq!(
+///     MapMeta::default(),
+///     MapMeta {
+///         entries_name: String::from("entries"),
+///         sorted: false,
+///         keys: FieldMeta {
+///             name: String::from("keys"),
+///             ..FieldMeta::default()
+///         },
+///         values: FieldMeta {
+///             name: String::from("values"),
+///             nullable: true,
+///             ..FieldMeta::default()
+///         },
+///     },
+/// );
+/// ```
+///
+/// Note: the defaults follow the defaults of `arrow`'s MapBuilder.
+///
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MapMeta {
+    /// The name of the entries field (defaults to `"entries"`)
+    pub entries_name: String,
+    /// Whether the maps are sorted (defaults to `false`)
+    pub sorted: bool,
+    /// The metadata of the keys array (defaults to a non-nullable field with name "keys")
+    pub keys: FieldMeta,
+    /// The metadata of the values array (defaults to a nullable field with name "values")
+    pub values: FieldMeta,
+}
+
+impl std::default::Default for MapMeta {
+    fn default() -> Self {
+        MapMeta {
+            entries_name: String::from("entries"),
+            sorted: false,
+            keys: FieldMeta {
+                name: String::from("keys"),
+                nullable: false,
+                metadata: HashMap::new(),
+            },
+            values: FieldMeta {
+                name: String::from("values"),
+                nullable: true,
+                metadata: HashMap::new(),
+            },
+        }
+    }
+}
+
 /// Data types of array
 ///
 #[cfg_attr(

@@ -3,7 +3,10 @@
 //! The views correspond 1:1 to the corresponding arrays.
 use half::f16;
 
-use crate::datatypes::{FieldMeta, TimeUnit};
+use crate::{
+    datatypes::{FieldMeta, MapMeta, TimeUnit},
+    error::{fail, ErrorKind, Result},
+};
 
 // assert that the `Array` implements the expected traits
 const _: () = {
@@ -78,7 +81,7 @@ pub enum View<'a> {
     /// See [`Array::Dictionary`][crate::array::Array::Dictionary]
     Dictionary(DictionaryView<'a>),
     /// See [`Array::Map`][crate::array::Array::Map]
-    Map(ListView<'a, i32>),
+    Map(MapView<'a>),
     /// See [`Array::DenseUnion`][crate::array::Array::DenseUnion]
     DenseUnion(DenseUnionView<'a>),
 }
@@ -154,6 +157,52 @@ pub struct StructView<'a> {
     pub validity: Option<BitsWithOffset<'a>>,
     /// See [`StructArray::fields`][crate::array::StructArray::fields]
     pub fields: Vec<(FieldMeta, View<'a>)>,
+}
+
+/// See [`MapArray`][crate::array::MapArray]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MapView<'a> {
+    /// See [`MapArray::validity`][crate::array::MapArray::validity]
+    pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`MapArray::offsets`][crate::array::MapArray::offsets]
+    pub offsets: &'a [i32],
+    /// See [`MapArray::meta`][crate::array::MapArray::meta]
+    pub meta: MapMeta,
+    /// See [`MapArray::keys`][crate::array::MapArray::keys]
+    pub keys: Box<View<'a>>,
+    /// See [`MapArray::values`][crate::array::MapArray::values]
+    pub values: Box<View<'a>>,
+}
+
+impl<'a> MapView<'a> {
+    pub(crate) fn from_logical_view(
+        entries: View<'a>,
+        entries_name: String,
+        sorted: bool,
+        validity: Option<BitsWithOffset<'a>>,
+        offsets: &'a [i32],
+    ) -> Result<Self> {
+        let View::Struct(entries) = entries else {
+            fail!(ErrorKind::Unsupported, "Expected struct array");
+        };
+        let Ok(entries_fields) = <[(FieldMeta, View); 2]>::try_from(entries.fields) else {
+            fail!(ErrorKind::Unsupported, "Expected two entries");
+        };
+        let [(keys_meta, keys_view), (values_meta, values_view)] = entries_fields;
+
+        Ok(MapView {
+            validity,
+            offsets,
+            meta: MapMeta {
+                entries_name,
+                sorted,
+                keys: keys_meta,
+                values: values_meta,
+            },
+            keys: Box::new(keys_view),
+            values: Box::new(values_view),
+        })
+    }
 }
 
 /// See [`ListArray`][crate::array::ListArray]

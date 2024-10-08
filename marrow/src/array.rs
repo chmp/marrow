@@ -2,11 +2,12 @@
 use half::f16;
 
 use crate::{
-    datatypes::{FieldMeta, TimeUnit},
+    datatypes::{FieldMeta, MapMeta, TimeUnit},
+    error::{fail, ErrorKind, Result},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeBinaryView, FixedSizeListView, ListView, NullView, PrimitiveView, StructView,
-        TimeView, TimestampView, View,
+        FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
+        StructView, TimeView, TimestampView, View,
     },
 };
 
@@ -81,7 +82,7 @@ pub enum Array {
     /// An array of dictionaries
     Dictionary(DictionaryArray),
     /// An array of maps
-    Map(ListArray<i32>),
+    Map(MapArray),
     /// An array of unions
     DenseUnion(DenseUnionArray),
 }
@@ -159,7 +160,7 @@ impl BooleanArray {
             len: self.len,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             values: BitsWithOffset {
                 offset: 0,
@@ -184,7 +185,7 @@ impl<T> PrimitiveArray<T> {
         PrimitiveView {
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             values: &self.values,
         }
@@ -209,7 +210,7 @@ impl<T> TimeArray<T> {
             unit: self.unit,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             values: &self.values,
         }
@@ -238,7 +239,7 @@ impl TimestampArray {
             timezone: self.timezone.clone(),
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             values: &self.values,
         }
@@ -263,7 +264,7 @@ impl StructArray {
             len: self.len,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             fields: self
                 .fields
@@ -271,6 +272,65 @@ impl StructArray {
                 .map(|(meta, array)| (meta.clone(), array.as_view()))
                 .collect(),
         }
+    }
+}
+
+/// An array of maps
+#[derive(Clone, Debug, PartialEq)]
+pub struct MapArray {
+    /// The validity of the elements as a bitmap
+    pub validity: Option<Vec<u8>>,
+    /// The offsets of the elements
+    pub offsets: Vec<i32>,
+    /// The metadata of the map
+    pub meta: MapMeta,
+    /// The keys stored in the array
+    pub keys: Box<Array>,
+    /// The values stored in the array
+    pub values: Box<Array>,
+}
+
+impl MapArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> MapView<'_> {
+        MapView {
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: values,
+            }),
+            offsets: &self.offsets,
+            meta: self.meta.clone(),
+            keys: Box::new(self.keys.as_view()),
+            values: Box::new(self.values.as_view()),
+        }
+    }
+}
+
+impl MapArray {
+    #[allow(clippy::type_complexity)]
+    pub(crate) fn into_logical_array(
+        self,
+    ) -> Result<(Array, String, bool, Option<Vec<u8>>, Vec<i32>)> {
+        let Some(&last_offset) = self.offsets.last() else {
+            fail!(ErrorKind::Unsupported, "Invalid map array");
+        };
+
+        let entries = Array::Struct(StructArray {
+            len: usize::try_from(last_offset)?,
+            validity: None,
+            fields: vec![
+                (self.meta.keys, *self.keys),
+                (self.meta.values, *self.values),
+            ],
+        });
+
+        Ok((
+            entries,
+            self.meta.entries_name,
+            self.meta.sorted,
+            self.validity,
+            self.offsets,
+        ))
     }
 }
 
@@ -295,7 +355,7 @@ impl<O> ListArray<O> {
         ListView {
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             offsets: &self.offsets,
             meta: self.meta.clone(),
@@ -327,7 +387,7 @@ impl FixedSizeListArray {
             n: self.n,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             meta: self.meta.clone(),
             elements: Box::new(self.elements.as_view()),
@@ -354,7 +414,7 @@ impl<O> BytesArray<O> {
         BytesView {
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             offsets: &self.offsets,
             data: &self.data,
@@ -380,7 +440,7 @@ impl FixedSizeBinaryArray {
             n: self.n,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             data: &self.data,
         }
@@ -410,7 +470,7 @@ impl<T> DecimalArray<T> {
             scale: self.scale,
             validity: self.validity.as_ref().map(|values| BitsWithOffset {
                 offset: 0,
-                data: &values,
+                data: values,
             }),
             values: &self.values,
         }

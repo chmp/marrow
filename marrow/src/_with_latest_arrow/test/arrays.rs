@@ -5,9 +5,9 @@ use super::super::arrow;
 use crate::{
     array::{
         Array, BooleanArray, BytesArray, DenseUnionArray, FixedSizeBinaryArray, FixedSizeListArray,
-        ListArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
+        ListArray, MapArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
     },
-    datatypes::{FieldMeta, TimeUnit},
+    datatypes::{FieldMeta, MapMeta, TimeUnit},
     testing::{view_as, PanicOnError},
     view::{BitsWithOffset, PrimitiveView, View},
 };
@@ -21,12 +21,22 @@ fn assert_arrays_eq(
     marrow_array: Array,
 ) -> PanicOnError<()> {
     let array_via_marrow = arrow::array::ArrayRef::try_from(marrow_array.clone())?;
-    assert_eq!(array_via_arrow.data_type(), array_via_marrow.data_type());
-    assert_eq!(&array_via_arrow, &array_via_marrow);
+    assert_eq!(
+        array_via_arrow.data_type(),
+        array_via_marrow.data_type(),
+        "arrow (left) != marrow (right)"
+    );
+    assert_eq!(
+        &array_via_arrow, &array_via_marrow,
+        "arrow (left) != marrow (right)"
+    );
 
     let view_via_arrow = View::try_from(&*array_via_arrow)?;
     let view_via_marrow = marrow_array.as_view();
-    assert_eq!(view_via_arrow, view_via_marrow);
+    assert_eq!(
+        view_via_arrow, view_via_marrow,
+        "arrow (left) != marrow (right)"
+    );
 
     Ok(())
 }
@@ -1365,6 +1375,58 @@ mod fixed_size_list {
                 elements: Box::new(Array::Int32(PrimitiveArray {
                     validity: Some(vec![0b_01_000_111, 0b_011_1]),
                     values: vec![0, 1, 2, 0, 0, 0, 3, 0, 5, 6, 7, 0],
+                })),
+            }),
+        )
+    }
+}
+
+mod map {
+    use super::*;
+
+    // example from the arrow docs
+    fn example_array() -> PanicOnError<arrow::array::ArrayRef> {
+        let string_builder = arrow::array::StringBuilder::new();
+        let int_builder = arrow::array::Int32Builder::new();
+
+        // Construct `[{"joe": 1}, {"blogs": 2, "foo": 4}, {}, null]`
+        let mut builder = arrow::array::MapBuilder::new(None, string_builder, int_builder);
+
+        builder.keys().append_value("joe");
+        builder.values().append_value(1);
+        builder.append(true).unwrap();
+
+        builder.keys().append_value("blogs");
+        builder.values().append_value(2);
+        builder.keys().append_value("foo");
+        builder.values().append_value(4);
+        builder.append(true).unwrap();
+        builder.append(true).unwrap();
+        builder.append(false).unwrap();
+
+        Ok(Arc::new(builder.finish()) as arrow::array::ArrayRef)
+    }
+
+    #[test]
+    fn example() -> PanicOnError<()> {
+        let array_via_arrow = example_array()?;
+
+        // assert_eq!(array.data_type(), &arrow::datatypes::DataType::Null);
+
+        assert_arrays_eq(
+            array_via_arrow,
+            Array::Map(MapArray {
+                meta: MapMeta::default(),
+                validity: Some(vec![0b_0111]),
+                offsets: vec![0, 1, 3, 3, 3],
+                keys: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 3, 8, 11],
+                    data: b"joeblogsfoo".into(),
+                })),
+                values: Box::new(Array::Int32(PrimitiveArray {
+                    validity: None,
+                    values: vec![1, 2, 4],
                 })),
             }),
         )

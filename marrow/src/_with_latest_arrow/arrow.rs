@@ -28,7 +28,8 @@ pub mod array {
 
     // specialized builders
     pub use super::_arrow_array::builder::{
-        FixedSizeListBuilder, Int32Builder, LargeListBuilder, ListBuilder,
+        FixedSizeListBuilder, Int32Builder, LargeListBuilder, ListBuilder, MapBuilder,
+        StringBuilder,
     };
 }
 pub mod datatypes {
