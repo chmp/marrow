@@ -1126,6 +1126,7 @@ dependencies = [
  "arrow2 0.16.0",
  "arrow2 0.17.4",
  "bytemuck",
+ "chrono",
  "half",
  "serde",
  "serde_json",

@@ -16,10 +16,14 @@ pub mod array {
 
     // specialized arrays
     pub use super::_arrow_array::array::{
-        BinaryArray, BooleanArray, FixedSizeBinaryArray, FixedSizeListArray, Float16Array,
-        Float32Array, Float64Array, Int16Array, Int32Array, Int64Array, Int8Array,
-        LargeBinaryArray, LargeStringArray, MapArray, NullArray, StringArray, StructArray,
-        UInt16Array, UInt32Array, UInt64Array, UInt8Array, UnionArray,
+        BinaryArray, BooleanArray, Date32Array, Date64Array, DurationMicrosecondArray,
+        DurationMillisecondArray, DurationNanosecondArray, DurationSecondArray,
+        FixedSizeBinaryArray, FixedSizeListArray, Float16Array, Float32Array, Float64Array,
+        Int16Array, Int32Array, Int64Array, Int8Array, LargeBinaryArray, LargeStringArray,
+        MapArray, NullArray, StringArray, StructArray, Time32MillisecondArray, Time32SecondArray,
+        Time64MicrosecondArray, Time64NanosecondArray, TimestampMicrosecondArray,
+        TimestampMillisecondArray, TimestampNanosecondArray, TimestampSecondArray, UInt16Array,
+        UInt32Array, UInt64Array, UInt8Array, UnionArray,
     };
 
     // specialized builders

@@ -442,6 +442,97 @@ mod float64 {
     }
 }
 
+mod date32 {
+    use super::*;
+
+    use arrow::datatypes::Date32Type;
+    use chrono::NaiveDate;
+
+    fn ymd_as_num(y: i32, m: u32, d: u32) -> i32 {
+        let unix_epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+        (NaiveDate::from_ymd_opt(y, m, d).unwrap() - unix_epoch).num_days() as i32
+    }
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Date32Array>(vec![
+                Date32Type::from_naive_date(NaiveDate::from_ymd_opt(2024, 10, 8).unwrap()),
+                Date32Type::from_naive_date(NaiveDate::from_ymd_opt(-10, 12, 31).unwrap()),
+            ]),
+            Array::Date32(PrimitiveArray {
+                validity: None,
+                values: vec![ymd_as_num(2024, 10, 8), ymd_as_num(-10, 12, 31)],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Date32Array>(vec![
+                Some(Date32Type::from_naive_date(
+                    NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
+                )),
+                None,
+                Some(Date32Type::from_naive_date(
+                    NaiveDate::from_ymd_opt(-10, 12, 31).unwrap(),
+                )),
+            ]),
+            Array::Date32(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![ymd_as_num(2024, 10, 8), 0, ymd_as_num(-10, 12, 31)],
+            }),
+        )
+    }
+}
+
+mod date64 {
+    use super::*;
+
+    use arrow::datatypes::Date64Type;
+    use chrono::NaiveDate;
+
+    fn ymd_as_num(y: i32, m: u32, d: u32) -> i64 {
+        let unix_epoch = NaiveDate::from_ymd_opt(1970, 1, 1).unwrap();
+        (NaiveDate::from_ymd_opt(y, m, d).unwrap() - unix_epoch).num_days() as i64
+            * (24 * 60 * 60 * 1000)
+    }
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Date64Array>(vec![
+                Date64Type::from_naive_date(NaiveDate::from_ymd_opt(2024, 10, 8).unwrap()),
+                Date64Type::from_naive_date(NaiveDate::from_ymd_opt(-10, 12, 31).unwrap()),
+            ]),
+            Array::Date64(PrimitiveArray {
+                validity: None,
+                values: vec![ymd_as_num(2024, 10, 8), ymd_as_num(-10, 12, 31)],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Date64Array>(vec![
+                Some(Date64Type::from_naive_date(
+                    NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
+                )),
+                None,
+                Some(Date64Type::from_naive_date(
+                    NaiveDate::from_ymd_opt(-10, 12, 31).unwrap(),
+                )),
+            ]),
+            Array::Date64(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![ymd_as_num(2024, 10, 8), 0, ymd_as_num(-10, 12, 31)],
+            }),
+        )
+    }
+}
+
 mod utf8 {
     use super::*;
 
