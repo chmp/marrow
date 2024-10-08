@@ -1,4 +1,4 @@
-use super::arrow;
+use super::super::arrow;
 
 use crate::{
     datatypes::{DataType, TimeUnit},

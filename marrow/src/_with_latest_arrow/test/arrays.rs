@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::arrow;
+use super::super::arrow;
 
 use crate::{
     array::{
