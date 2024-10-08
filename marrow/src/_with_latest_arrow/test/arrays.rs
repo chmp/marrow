@@ -4,14 +4,14 @@ use super::super::arrow;
 
 use crate::{
     array::{
-        Array, BooleanArray, BytesArray, FixedSizeBinaryArray, FixedSizeListArray, ListArray,
-        NullArray, PrimitiveArray,
+        Array, BooleanArray, BytesArray, DenseUnionArray, FixedSizeBinaryArray, FixedSizeListArray,
+        ListArray, NullArray, PrimitiveArray,
     },
     datatypes::FieldMeta,
     testing::{view_as, PanicOnError},
     view::{
-        BitsWithOffset, BooleanView, BytesView, FixedSizeBinaryView, FixedSizeListView, ListView,
-        NullView, PrimitiveView, View,
+        BitsWithOffset, BooleanView, BytesView, FixedSizeBinaryView,
+        FixedSizeListView, ListView, NullView, PrimitiveView, View,
     },
 };
 
@@ -1220,6 +1220,93 @@ mod fixed_size_list {
                 })),
             }
         );
+        Ok(())
+    }
+}
+
+mod dense_union_array {
+    use super::*;
+
+    use arrow::array::{ArrayRef, Float64Array, Int32Array, UnionArray};
+
+    // example from arrow docs
+    fn example_array() -> PanicOnError<ArrayRef> {
+        let int_array = Int32Array::from(vec![1, 34]);
+        let float_array = Float64Array::from(vec![3.2]);
+        let type_ids = vec![0_i8, 1, 0];
+        let offsets = vec![0, 0, 1];
+
+        let union_fields = vec![
+            (
+                0_i8,
+                Arc::new(arrow::datatypes::Field::new(
+                    "A",
+                    arrow::datatypes::DataType::Int32,
+                    false,
+                )),
+            ),
+            (
+                1_i8,
+                Arc::new(arrow::datatypes::Field::new(
+                    "B",
+                    arrow::datatypes::DataType::Float64,
+                    false,
+                )),
+            ),
+        ];
+
+        let children = vec![Arc::new(int_array) as ArrayRef, Arc::new(float_array)];
+
+        let array = UnionArray::try_new(
+            union_fields.into_iter().collect(),
+            type_ids.into(),
+            Some(offsets.into()),
+            children,
+        )?;
+
+        Ok(Arc::new(array) as ArrayRef)
+    }
+
+    #[test]
+    fn example() -> PanicOnError<()> {
+        let marrow_array = Array::DenseUnion(DenseUnionArray {
+            types: vec![0, 1, 0],
+            offsets: vec![0, 0, 1],
+            fields: vec![
+                (
+                    0,
+                    FieldMeta {
+                        name: String::from("A"),
+                        ..Default::default()
+                    },
+                    Array::Int32(PrimitiveArray {
+                        validity: None,
+                        values: vec![1, 34],
+                    }),
+                ),
+                (
+                    1,
+                    FieldMeta {
+                        name: String::from("B"),
+                        ..Default::default()
+                    },
+                    Array::Float64(PrimitiveArray {
+                        validity: None,
+                        values: vec![3.2],
+                    }),
+                ),
+            ],
+        });
+
+        let array_via_arrow = example_array()?;
+        let array_via_marrow = ArrayRef::try_from(marrow_array.clone())?;
+        assert_eq!(&array_via_arrow, &array_via_marrow);
+
+        let view_via_arrow = View::try_from(&*array_via_arrow)?;
+        let view_via_marrow = marrow_array.as_view();
+        assert_eq!(view_via_arrow, view_via_marrow);
+        assert!(matches!(view_via_arrow, View::DenseUnion(_)));
+
         Ok(())
     }
 }
