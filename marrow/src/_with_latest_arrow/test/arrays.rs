@@ -655,6 +655,133 @@ mod time64_nanosecond {
     }
 }
 
+mod duration_second {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationSecondArray>(vec![1, 2, 3]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Second,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationSecondArray>(vec![None, None, Some(3), Some(4)]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Second,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod duration_millisecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationMillisecondArray>(vec![1, 2, 3]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Millisecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationMillisecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Millisecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod duration_microsecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationMicrosecondArray>(vec![1, 2, 3]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Microsecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationMicrosecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Microsecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod duration_nanosecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationNanosecondArray>(vec![1, 2, 3]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Nanosecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::DurationNanosecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Duration(TimeArray {
+                unit: TimeUnit::Nanosecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
 mod utf8 {
     use super::*;
 
