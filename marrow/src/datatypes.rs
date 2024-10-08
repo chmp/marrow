@@ -3,12 +3,17 @@ use std::collections::HashMap;
 
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
-// assert that the `Field, FieldMeta, DataType` implement the expected traits
+// assert that the `DataType` implements the expected traits
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
+    impl AssertExpectedTraits for DataType {}
+};
+
+// assert that the `Field` and `FieldMeta` implement the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + Default + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for Field {}
     impl AssertExpectedTraits for FieldMeta {}
-    impl AssertExpectedTraits for DataType {}
 };
 
 /// The data type and metadata of a field
@@ -25,8 +30,19 @@ pub struct Field {
     pub metadata: HashMap<String, String>,
 }
 
+impl std::default::Default for Field {
+    fn default() -> Self {
+        Self {
+            data_type: DataType::Null,
+            name: Default::default(),
+            nullable: Default::default(),
+            metadata: Default::default(),
+        }
+    }
+}
+
 /// Metadata for a field (everything but the data type)
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FieldMeta {
     /// The name of the field
     pub name: String,

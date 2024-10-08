@@ -408,7 +408,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 let mut values = Vec::new();
                 let mut fields = Vec::new();
 
-                for (child, meta) in arr.fields {
+                for (meta, child) in arr.fields {
                     let child: Box<dyn arrow2::array::Array> = child.try_into()?;
                     let field = field_from_array_and_meta(child.as_ref(), meta);
 
@@ -440,7 +440,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 let mut fields = Vec::new();
                 let mut type_ids = Vec::new();
 
-                for (type_id, child, meta) in arr.fields {
+                for (type_id, meta, child) in arr.fields {
                     let child: Box<dyn arrow2::array::Array> = child.try_into()?;
                     let field = field_from_array_and_meta(child.as_ref(), meta);
 
@@ -758,8 +758,8 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             let mut fields = Vec::new();
             for (child_field, child) in child_fields.iter().zip(array.values()) {
                 fields.push((
-                    child.as_ref().try_into()?,
                     meta_from_field(child_field.try_into()?),
+                    child.as_ref().try_into()?,
                 ));
             }
             Ok(V::Struct(StructView {
@@ -818,8 +818,8 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             {
                 fields.push((
                     (*type_id).try_into()?,
-                    child.as_ref().try_into()?,
                     meta_from_field(child_field.try_into()?),
+                    child.as_ref().try_into()?,
                 ));
             }
 

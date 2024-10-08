@@ -1,8 +1,11 @@
 # Change log
 
-## 0.1.1
+## 0.2
 
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`
+- Implement `Default` for `Field` and `FieldMeta`
+- Place metadata in front of arrays in `StructArray::fields`, `DenseUnionArray::fields`
+- Add `as_view` for `Array` and the array structs
 
 ## 0.1.0
 

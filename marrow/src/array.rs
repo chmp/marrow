@@ -1,7 +1,14 @@
 //! Arrays with owned data
 use half::f16;
 
-use crate::datatypes::{FieldMeta, TimeUnit};
+use crate::{
+    datatypes::{FieldMeta, TimeUnit},
+    view::{
+        BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
+        FixedSizeBinaryView, FixedSizeListView, ListView, NullView, PrimitiveView, StructView,
+        TimeView, TimestampView, View,
+    },
+};
 
 // assert that the `Array` implements the expected traits
 const _: () = {
@@ -79,11 +86,58 @@ pub enum Array {
     DenseUnion(DenseUnionArray),
 }
 
+impl Array {
+    /// Get the view for this array
+    pub fn as_view(&self) -> View<'_> {
+        match self {
+            Self::Null(array) => View::Null(array.as_view()),
+            Self::Boolean(array) => View::Boolean(array.as_view()),
+            Self::Int8(array) => View::Int8(array.as_view()),
+            Self::Int16(array) => View::Int16(array.as_view()),
+            Self::Int32(array) => View::Int32(array.as_view()),
+            Self::Int64(array) => View::Int64(array.as_view()),
+            Self::UInt8(array) => View::UInt8(array.as_view()),
+            Self::UInt16(array) => View::UInt16(array.as_view()),
+            Self::UInt32(array) => View::UInt32(array.as_view()),
+            Self::UInt64(array) => View::UInt64(array.as_view()),
+            Self::Float16(array) => View::Float16(array.as_view()),
+            Self::Float32(array) => View::Float32(array.as_view()),
+            Self::Float64(array) => View::Float64(array.as_view()),
+            Self::Decimal128(array) => View::Decimal128(array.as_view()),
+            Self::Date32(array) => View::Date32(array.as_view()),
+            Self::Date64(array) => View::Date64(array.as_view()),
+            Self::Time32(array) => View::Time32(array.as_view()),
+            Self::Time64(array) => View::Time64(array.as_view()),
+            Self::Timestamp(array) => View::Timestamp(array.as_view()),
+            Self::Duration(array) => View::Duration(array.as_view()),
+            Self::Binary(array) => View::Binary(array.as_view()),
+            Self::LargeBinary(array) => View::LargeBinary(array.as_view()),
+            Self::FixedSizeBinary(array) => View::FixedSizeBinary(array.as_view()),
+            Self::Utf8(array) => View::Utf8(array.as_view()),
+            Self::LargeUtf8(array) => View::LargeUtf8(array.as_view()),
+            Self::List(array) => View::List(array.as_view()),
+            Self::LargeList(array) => View::LargeList(array.as_view()),
+            Self::FixedSizeList(array) => View::FixedSizeList(array.as_view()),
+            Self::Struct(array) => View::Struct(array.as_view()),
+            Self::Map(array) => View::Map(array.as_view()),
+            Self::Dictionary(array) => View::Dictionary(array.as_view()),
+            Self::DenseUnion(array) => View::DenseUnion(array.as_view()),
+        }
+    }
+}
+
 /// An array without data
 #[derive(Clone, Debug, PartialEq)]
 pub struct NullArray {
     /// The len of the array
     pub len: usize,
+}
+
+impl NullArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> NullView {
+        NullView { len: self.len }
+    }
 }
 
 /// A `bool` array
@@ -98,6 +152,23 @@ pub struct BooleanArray {
     pub values: Vec<u8>,
 }
 
+impl BooleanArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> BooleanView<'_> {
+        BooleanView {
+            len: self.len,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            values: BitsWithOffset {
+                offset: 0,
+                data: &self.values,
+            },
+        }
+    }
+}
+
 /// An array of primitive values
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveArray<T> {
@@ -105,6 +176,19 @@ pub struct PrimitiveArray<T> {
     pub validity: Option<Vec<u8>>,
     /// The values of the array
     pub values: Vec<T>,
+}
+
+impl<T> PrimitiveArray<T> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> PrimitiveView<'_, T> {
+        PrimitiveView {
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            values: &self.values,
+        }
+    }
 }
 
 /// An array time values (e.g., `"12:53"`)
@@ -116,6 +200,20 @@ pub struct TimeArray<T> {
     pub validity: Option<Vec<u8>>,
     /// The values of the array stored as the offsets from midnight
     pub values: Vec<T>,
+}
+
+impl<T> TimeArray<T> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> TimeView<'_, T> {
+        TimeView {
+            unit: self.unit,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            values: &self.values,
+        }
+    }
 }
 
 /// An array of timestamps with an optional timezone
@@ -132,6 +230,21 @@ pub struct TimestampArray {
     pub values: Vec<i64>,
 }
 
+impl TimestampArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> TimestampView<'_> {
+        TimestampView {
+            unit: self.unit,
+            timezone: self.timezone.clone(),
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            values: &self.values,
+        }
+    }
+}
+
 /// An array of structs
 #[derive(Clone, Debug, PartialEq)]
 pub struct StructArray {
@@ -140,7 +253,25 @@ pub struct StructArray {
     /// The validity of the elements as a bitmap
     pub validity: Option<Vec<u8>>,
     /// The fields with their metadata
-    pub fields: Vec<(Array, FieldMeta)>,
+    pub fields: Vec<(FieldMeta, Array)>,
+}
+
+impl StructArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> StructView<'_> {
+        StructView {
+            len: self.len,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            fields: self
+                .fields
+                .iter()
+                .map(|(meta, array)| (meta.clone(), array.as_view()))
+                .collect(),
+        }
+    }
 }
 
 /// An array of lists
@@ -158,6 +289,21 @@ pub struct ListArray<O> {
     pub elements: Box<Array>,
 }
 
+impl<O> ListArray<O> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> ListView<'_, O> {
+        ListView {
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            offsets: &self.offsets,
+            meta: self.meta.clone(),
+            elements: Box::new(self.elements.as_view()),
+        }
+    }
+}
+
 /// An array of lists of fixed size
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeListArray {
@@ -173,6 +319,22 @@ pub struct FixedSizeListArray {
     pub elements: Box<Array>,
 }
 
+impl FixedSizeListArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> FixedSizeListView<'_> {
+        FixedSizeListView {
+            len: self.len,
+            n: self.n,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            meta: self.meta.clone(),
+            elements: Box::new(self.elements.as_view()),
+        }
+    }
+}
+
 /// An array of bytes with varying sizes
 ///
 /// The value of element `i` can be access by the pseudo code `data[offsets[i]..offsets[i + 1]]`
@@ -186,6 +348,20 @@ pub struct BytesArray<O> {
     pub data: Vec<u8>,
 }
 
+impl<O> BytesArray<O> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> BytesView<'_, O> {
+        BytesView {
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            offsets: &self.offsets,
+            data: &self.data,
+        }
+    }
+}
+
 /// An array of byte vectors with fixed length
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeBinaryArray {
@@ -195,6 +371,20 @@ pub struct FixedSizeBinaryArray {
     pub validity: Option<Vec<u8>>,
     /// The data with each element concatenated
     pub data: Vec<u8>,
+}
+
+impl FixedSizeBinaryArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> FixedSizeBinaryView<'_> {
+        FixedSizeBinaryView {
+            n: self.n,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            data: &self.data,
+        }
+    }
 }
 
 /// An array of fixed point values
@@ -212,6 +402,21 @@ pub struct DecimalArray<T> {
     pub values: Vec<T>,
 }
 
+impl<T> DecimalArray<T> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> DecimalView<'_, T> {
+        DecimalView {
+            precision: self.precision,
+            scale: self.scale,
+            validity: self.validity.as_ref().map(|values| BitsWithOffset {
+                offset: 0,
+                data: &values,
+            }),
+            values: &self.values,
+        }
+    }
+}
+
 /// An array that deduplicates elements
 ///
 /// For element `i`, the value can be looked up by the pseudo code `values[indices[i]]`
@@ -221,6 +426,16 @@ pub struct DictionaryArray {
     pub indices: Box<Array>,
     /// The possible values of elements
     pub values: Box<Array>,
+}
+
+impl DictionaryArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> DictionaryView<'_> {
+        DictionaryView {
+            indices: Box::new(self.indices.as_view()),
+            values: Box::new(self.values.as_view()),
+        }
+    }
 }
 
 /// A union of different data types
@@ -236,5 +451,19 @@ pub struct DenseUnionArray {
     /// The offset into the underlying arrays
     pub offsets: Vec<i32>,
     /// The arrays with their metadata
-    pub fields: Vec<(i8, Array, FieldMeta)>,
+    pub fields: Vec<(i8, FieldMeta, Array)>,
+}
+
+impl DenseUnionArray {
+    fn as_view(&self) -> DenseUnionView<'_> {
+        DenseUnionView {
+            types: &self.types,
+            offsets: &self.offsets,
+            fields: self
+                .fields
+                .iter()
+                .map(|(type_id, meta, array)| (*type_id, meta.clone(), array.as_view()))
+                .collect(),
+        }
+    }
 }

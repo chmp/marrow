@@ -358,7 +358,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             let mut fields = Vec::new();
             let mut data = Vec::new();
 
-            for (field, meta) in arr.fields {
+            for (meta, field) in arr.fields {
                 let child = build_array_data(field)?;
                 fields.push(Arc::new(field_from_data_and_meta(&child, meta)));
                 data.push(child);
@@ -461,7 +461,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             let mut fields = Vec::new();
             let mut child_data = Vec::new();
 
-            for (type_id, array, meta) in arr.fields {
+            for (type_id, meta, array) in arr.fields {
                 let child = build_array_data(array)?;
                 let field = field_from_data_and_meta(&child, meta);
 
@@ -749,7 +749,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             for (field, array) in std::iter::zip(column_fields, array.columns()) {
                 let view = View::try_from(array.as_ref())?;
                 let meta = meta_from_field(Field::try_from(field.as_ref())?);
-                fields.push((view, meta));
+                fields.push((meta, view));
             }
 
             Ok(View::Struct(StructView {
@@ -805,7 +805,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             for (type_id, field) in union_fields.iter() {
                 let meta = meta_from_field(Field::try_from(field.as_ref())?);
                 let view: View = array.child(type_id).as_ref().try_into()?;
-                fields.push((type_id, view, meta));
+                fields.push((type_id, meta, view));
             }
             let Some(offsets) = array.offsets() else {
                 fail!(

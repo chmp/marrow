@@ -153,7 +153,7 @@ pub struct StructView<'a> {
     /// See [`StructArray::validity`][crate::array::StructArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
     /// See [`StructArray::fields`][crate::array::StructArray::fields]
-    pub fields: Vec<(View<'a>, FieldMeta)>,
+    pub fields: Vec<(FieldMeta, View<'a>)>,
 }
 
 /// See [`ListArray`][crate::array::ListArray]
@@ -236,5 +236,5 @@ pub struct DenseUnionView<'a> {
     /// See [`DenseUnionArray::offsets`][crate::array::DenseUnionArray::offsets]
     pub offsets: &'a [i32],
     /// See [`DenseUnionArray::fields`][crate::array::DenseUnionArray::fields]
-    pub fields: Vec<(i8, View<'a>, FieldMeta)>,
+    pub fields: Vec<(i8, FieldMeta, View<'a>)>,
 }
