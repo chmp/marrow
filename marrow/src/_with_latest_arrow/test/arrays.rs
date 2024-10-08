@@ -5,9 +5,9 @@ use super::super::arrow;
 use crate::{
     array::{
         Array, BooleanArray, BytesArray, DenseUnionArray, FixedSizeBinaryArray, FixedSizeListArray,
-        ListArray, NullArray, PrimitiveArray,
+        ListArray, NullArray, PrimitiveArray, TimeArray,
     },
-    datatypes::FieldMeta,
+    datatypes::{FieldMeta, TimeUnit},
     testing::{view_as, PanicOnError},
     view::{BitsWithOffset, PrimitiveView, View},
 };
@@ -528,6 +528,128 @@ mod date64 {
             Array::Date64(PrimitiveArray {
                 validity: Some(vec![0b_101]),
                 values: vec![ymd_as_num(2024, 10, 8), 0, ymd_as_num(-10, 12, 31)],
+            }),
+        )
+    }
+}
+
+mod time32_seconds {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time32SecondArray>(vec![1, 2, 3]),
+            Array::Time32(TimeArray {
+                unit: TimeUnit::Second,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time32SecondArray>(vec![None, None, Some(3), Some(4)]),
+            Array::Time32(TimeArray {
+                unit: TimeUnit::Second,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod time32_milliseconds {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time32MillisecondArray>(vec![1, 2, 3]),
+            Array::Time32(TimeArray {
+                unit: TimeUnit::Millisecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time32MillisecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Time32(TimeArray {
+                unit: TimeUnit::Millisecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod time64_microsecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time64MicrosecondArray>(vec![1, 2, 3]),
+            Array::Time64(TimeArray {
+                unit: TimeUnit::Microsecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time64MicrosecondArray>(vec![
+                None,
+                None,
+                Some(3),
+                Some(4),
+            ]),
+            Array::Time64(TimeArray {
+                unit: TimeUnit::Microsecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
+            }),
+        )
+    }
+}
+
+mod time64_nanosecond {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time64NanosecondArray>(vec![1, 2, 3]),
+            Array::Time64(TimeArray {
+                unit: TimeUnit::Nanosecond,
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow::array::Time64NanosecondArray>(vec![None, None, Some(3), Some(4)]),
+            Array::Time64(TimeArray {
+                unit: TimeUnit::Nanosecond,
+                validity: Some(vec![0b_1100]),
+                values: vec![0, 0, 3, 4],
             }),
         )
     }
