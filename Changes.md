@@ -1,6 +1,6 @@
 # Change log
 
-## 0.2
+## 0.2.0
 
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`
 - Implement `Default` for `Field` and `FieldMeta`
