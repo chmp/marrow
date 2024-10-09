@@ -56,7 +56,7 @@
 //! // access the underlying data
 //! let View::Int32(marrow_view) = marrow_view else { panic!() };
 //! assert_eq!(marrow_view.values, &[1, 2, 3]);
-//! # } Ok(()) }
+//! # } }
 //! ```
 //!
 //! Or to build an array:
@@ -77,7 +77,7 @@
 //! assert_eq!(arrow_array_ref.is_null(0), false);
 //! assert_eq!(arrow_array_ref.is_null(1), true);
 //! assert_eq!(arrow_array_ref.is_null(2), false);
-//! # } Ok(()) }
+//! # } }
 //! ```
 //!
 //! ## Features

@@ -13,6 +13,7 @@ macro_rules! _with_arrow {
             use $crate::r#impl::arrow;
             $($tt)*
         }
+        return Ok(());
     };
 }
 
