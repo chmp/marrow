@@ -1,4 +1,6 @@
-//! a module that mirrors the arrow package for the most recent release
+//! Internal do not use
+//!
+//! Reexport the latest arrow version for use in tests.
 #![allow(unused)]
 
 // arrow-version: replace: use arrow_array_{version} as _arrow_array;
