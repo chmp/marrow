@@ -134,4 +134,4 @@ mod impl_arrow;
 mod impl_arrow2;
 
 #[doc(hidden)]
-pub mod _impl;
+pub mod r#impl;

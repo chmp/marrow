@@ -8,7 +8,7 @@ macro_rules! _with_arrow {
         // arrow-version: replace:         #[cfg(feature = "arrow-53")]
         #[cfg(feature = "arrow-53")]
         {
-            use $crate::_impl::arrow;
+            use $crate::r#impl::arrow;
             $($tt)*
         }
     };
