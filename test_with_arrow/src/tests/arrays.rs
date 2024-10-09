@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use marrow::{
     array::{
-        Array, BooleanArray, BytesArray, FixedSizeBinaryArray, FixedSizeListArray, ListArray,
-        MapArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
+        Array, BooleanArray, BytesArray, DictionaryArray, FixedSizeBinaryArray, FixedSizeListArray,
+        ListArray, MapArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
     },
     datatypes::{FieldMeta, MapMeta, TimeUnit},
     view::{BitsWithOffset, PrimitiveView, View},
@@ -1490,6 +1490,371 @@ mod map {
                 values: Box::new(Array::Int32(PrimitiveArray {
                     validity: None,
                     values: vec![1, 2, 4],
+                })),
+            }),
+        )
+    }
+}
+
+mod dictionary {
+    use super::*;
+
+    fn build_dictionary_array<K, I>(items: Vec<I>) -> PanicOnError<arrow_array::ArrayRef>
+    where
+        K: arrow_array::types::ArrowDictionaryKeyType,
+        arrow_array::array::DictionaryArray<K>: FromIterator<I>,
+    {
+        let array: arrow_array::array::DictionaryArray<K> = items.into_iter().collect();
+        Ok(Arc::new(array) as arrow_array::ArrayRef)
+    }
+
+    #[test]
+    fn int8() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int8Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int8(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int8_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int8Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int8(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int16() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int16Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int16(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int16_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int16Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int16(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int32() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int32Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int32(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int32_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int32Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int32(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int64() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int64Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int64(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn int64_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::Int64Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::Int64(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint8() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt8Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt8(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint8_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt8Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt8(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint16() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt16Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt16(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint16_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt16Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt16(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint32() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt32Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt32(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint32_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt32Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt32(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint64() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt64Type, _>(vec![
+                "a", "a", "b", "c", "c",
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt64(PrimitiveArray {
+                    validity: None,
+                    values: vec![0, 0, 1, 2, 2],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2, 3],
+                    data: b"abc".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn uint64_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            build_dictionary_array::<arrow_array::types::UInt64Type, _>(vec![
+                Some("a"),
+                None,
+                None,
+                Some("c"),
+                Some("c"),
+            ])?,
+            Array::Dictionary(DictionaryArray {
+                indices: Box::new(Array::UInt64(PrimitiveArray {
+                    validity: Some(vec![0b_11001]),
+                    values: vec![0, 0, 0, 1, 1],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 1, 2],
+                    data: b"ac".to_vec(),
                 })),
             }),
         )
