@@ -14,8 +14,28 @@ mod dense_union_array {
 
     // Adapted from the arrow docs
     //
-    // License: Apache Software License 2.0
     // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/array/union_array.rs#L48
+    // License: ../../LICENSE.arrow.txt
+    // Notice: ../../NOTICE.arrow.txt
+    //
+    // Original notice:
+    //
+    // Licensed to the Apache Software Foundation (ASF) under one
+    // or more contributor license agreements.  See the NOTICE file
+    // distributed with this work for additional information
+    // regarding copyright ownership.  The ASF licenses this file
+    // to you under the Apache License, Version 2.0 (the
+    // "License"); you may not use this file except in compliance
+    // with the License.  You may obtain a copy of the License at
+    //
+    //   http://www.apache.org/licenses/LICENSE-2.0
+    //
+    // Unless required by applicable law or agreed to in writing,
+    // software distributed under the License is distributed on an
+    // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    // KIND, either express or implied.  See the License for the
+    // specific language governing permissions and limitations
+    // under the License.
     fn example_array() -> PanicOnError<ArrayRef> {
         let int_array = Int32Array::from(vec![1, 34]);
         let float_array = Float64Array::from(vec![3.2]);

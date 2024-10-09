@@ -32,4 +32,6 @@ SOFTWARE.
 ```
 
 Tests in `test_with_arrow` use snippets from the arrow documentation licensed under the Apache
-Software License 2.0.
+Software License 2.0. Copies of the license and notice files can be found at
+[`test_with_arrow/LICENSE.arrow.txt`](test_with_arrow/LICENSE.arrow.txt) and
+[`test_with_arrow/NOTICE.arrow.txt`](test_with_arrow/NOTICE.arrow.txt).

@@ -1225,6 +1225,27 @@ mod list {
     //
     // License: Apache Software License 2.0
     // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/generic_list_builder.rs#L218
+    // License: ../../LICENSE.arrow.txt
+    // Notice: ../../NOTICE.arrow.txt
+    //
+    // Original notice:
+    //
+    // Licensed to the Apache Software Foundation (ASF) under one
+    // or more contributor license agreements.  See the NOTICE file
+    // distributed with this work for additional information
+    // regarding copyright ownership.  The ASF licenses this file
+    // to you under the Apache License, Version 2.0 (the
+    // "License"); you may not use this file except in compliance
+    // with the License.  You may obtain a copy of the License at
+    //
+    //   http://www.apache.org/licenses/LICENSE-2.0
+    //
+    // Unless required by applicable law or agreed to in writing,
+    // software distributed under the License is distributed on an
+    // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    // KIND, either express or implied.  See the License for the
+    // specific language governing permissions and limitations
+    // under the License.
     fn example() -> ArrayRef {
         let mut builder = ListBuilder::new(Int32Builder::new());
 
@@ -1269,6 +1290,27 @@ mod large_list {
     //
     // License: Apache Software License 2.0
     // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/generic_list_builder.rs#L218
+    // License: ../../LICENSE.arrow.txt
+    // Notice: ../../NOTICE.arrow.txt
+    //
+    // Original notice:
+    //
+    // Licensed to the Apache Software Foundation (ASF) under one
+    // or more contributor license agreements.  See the NOTICE file
+    // distributed with this work for additional information
+    // regarding copyright ownership.  The ASF licenses this file
+    // to you under the Apache License, Version 2.0 (the
+    // "License"); you may not use this file except in compliance
+    // with the License.  You may obtain a copy of the License at
+    //
+    //   http://www.apache.org/licenses/LICENSE-2.0
+    //
+    // Unless required by applicable law or agreed to in writing,
+    // software distributed under the License is distributed on an
+    // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    // KIND, either express or implied.  See the License for the
+    // specific language governing permissions and limitations
+    // under the License.
     fn example() -> ArrayRef {
         let mut builder = LargeListBuilder::new(Int32Builder::new());
 
@@ -1313,6 +1355,27 @@ mod fixed_size_list {
     //
     // License: Apache Software License 2.0
     // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/fixed_size_list_builder.rs#L27
+    // License: ../../LICENSE.arrow.txt
+    // Notice: ../../NOTICE.arrow.txt
+    //
+    // Original notice:
+    //
+    // Licensed to the Apache Software Foundation (ASF) under one
+    // or more contributor license agreements.  See the NOTICE file
+    // distributed with this work for additional information
+    // regarding copyright ownership.  The ASF licenses this file
+    // to you under the Apache License, Version 2.0 (the
+    // "License"); you may not use this file except in compliance
+    // with the License.  You may obtain a copy of the License at
+    //
+    //   http://www.apache.org/licenses/LICENSE-2.0
+    //
+    // Unless required by applicable law or agreed to in writing,
+    // software distributed under the License is distributed on an
+    // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    // KIND, either express or implied.  See the License for the
+    // specific language governing permissions and limitations
+    // under the License.
     fn example() -> ArrayRef {
         let mut builder = FixedSizeListBuilder::new(Int32Builder::new(), 3);
 
@@ -1368,6 +1431,27 @@ mod map {
     //
     // License: Apache Software License 2.0
     // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/map_builder.rs#L30
+    // License: ../../LICENSE.arrow.txt
+    // Notice: ../../NOTICE.arrow.txt
+    //
+    // Original notice:
+    //
+    // Licensed to the Apache Software Foundation (ASF) under one
+    // or more contributor license agreements.  See the NOTICE file
+    // distributed with this work for additional information
+    // regarding copyright ownership.  The ASF licenses this file
+    // to you under the Apache License, Version 2.0 (the
+    // "License"); you may not use this file except in compliance
+    // with the License.  You may obtain a copy of the License at
+    //
+    //   http://www.apache.org/licenses/LICENSE-2.0
+    //
+    // Unless required by applicable law or agreed to in writing,
+    // software distributed under the License is distributed on an
+    // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    // KIND, either express or implied.  See the License for the
+    // specific language governing permissions and limitations
+    // under the License.
     fn example_array() -> PanicOnError<arrow_array::ArrayRef> {
         let string_builder = StringBuilder::new();
         let int_builder = Int32Builder::new();
