@@ -9,7 +9,7 @@
 //! - [`arrow`](https://docs.rs/arrow/)
 //! - [`arrow2`](https://docs.rs/arrow2)
 //!
-//! The main type are
+//! The main types are
 //!
 //! - [`Array`][crate::array::Array]: an array with owned data
 //! - [`View`][crate::view::View]: an array with borrowed data
@@ -47,7 +47,7 @@
 For example to access the data in an arrow array:
 
 ```rust
-# use marrow::_impl::arrow as arrow;
+# use marrow::_with_latest_arrow::arrow as arrow;
 # fn main() -> marrow::error::Result<()> {
 use arrow::array::Int32Array;
 use marrow::view::View;
@@ -68,7 +68,7 @@ assert_eq!(marrow_view.values, &[1, 2, 3]);
 Or to build an array:
 
 ```rust
-# use marrow::_impl::arrow as arrow;
+# use marrow::_with_latest_arrow::arrow as arrow;
 # fn main() -> marrow::error::Result<()> {
 use arrow::array::Array as _;
 use marrow::array::{Array, PrimitiveArray};
@@ -131,7 +131,6 @@ assert_eq!(arrow_array_ref.is_null(2), false);
 //!
 //! Note, `arrow2=0.18` is not supported as the source code was not tagged on GitHub.
 //!
-pub mod _impl;
 #[deny(missing_docs)]
 pub mod array;
 #[deny(missing_docs)]
@@ -141,7 +140,10 @@ pub mod error;
 #[deny(missing_docs)]
 pub mod view;
 
-#[rustfmt::skip]
 mod impl_arrow;
-#[rustfmt::skip]
 mod impl_arrow2;
+
+// arrow-version: replace: #[cfg(feature = "arrow-{version}")]
+#[cfg(feature = "arrow-53")]
+#[doc(hidden)]
+pub mod _with_latest_arrow;

@@ -1,4 +1,5 @@
 //! Support for arrow
+#![cfg_attr(any(), rustfmt::skip)]
 
 // arrow-version:insert: #[cfg(feature = "arrow-{version}")]{\n}{\n}mod arrow_{version} {{{\n}    use {{arrow_array_{version} as arrow_array, arrow_buffer_{version} as arrow_buffer, arrow_data_{version} as arrow_data, arrow_schema_{version} as arrow_schema}};{\n}    include!("impl_api_47.rs");{\n}}}
 #[cfg(feature = "arrow-53")]

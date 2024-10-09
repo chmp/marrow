@@ -3,17 +3,17 @@ use std::borrow::Cow;
 use crate::{
     array::{Array, PrimitiveArray},
     datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
-    error::{error_with_kind_message_cause, fail, ErrorKind, MarrowError, Result},
+    error::{fail, ErrorKind, MarrowError, Result},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeBinaryView, FixedSizeListView, ListView, NullView, PrimitiveView, StructView,
-        TimeView, TimestampView, View,
+        FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
+        StructView, TimeView, TimestampView, View,
     },
 };
 
 impl From<arrow2::error::Error> for MarrowError {
     fn from(err: arrow2::error::Error) -> MarrowError {
-        error_with_kind_message_cause(ErrorKind::ArrowError, format!("arrow2::Error: {err}"), err)
+        MarrowError::with_cause(ErrorKind::ArrowError, format!("arrow2::Error: {err}"), err)
     }
 }
 
@@ -408,7 +408,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 let mut values = Vec::new();
                 let mut fields = Vec::new();
 
-                for (child, meta) in arr.fields {
+                for (meta, child) in arr.fields {
                     let child: Box<dyn arrow2::array::Array> = child.try_into()?;
                     let field = field_from_array_and_meta(child.as_ref(), meta);
 
@@ -423,15 +423,24 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 )))
             }
             A::Map(arr) => {
-                let child: Box<dyn arrow2::array::Array> = (*arr.elements).try_into()?;
-                let field = field_from_array_and_meta(child.as_ref(), arr.meta);
-                let validity = arr.validity.map(|v| {
-                    arrow2::bitmap::Bitmap::from_u8_vec(v, arr.offsets.len().saturating_sub(1))
+                let (entries, entries_name, sorted, validity, offsets) =
+                    arr.into_logical_array()?;
+                let entries = Box::<dyn arrow2::array::Array>::try_from(entries)?;
+                let field = field_from_array_and_meta(
+                    entries.as_ref(),
+                    FieldMeta {
+                        name: entries_name,
+                        ..FieldMeta::default()
+                    },
+                );
+                let validity = validity.map(|v| {
+                    arrow2::bitmap::Bitmap::from_u8_vec(v, offsets.len().saturating_sub(1))
                 });
+
                 Ok(Box::new(arrow2::array::MapArray::new(
-                    AT::Map(Box::new(field), false),
-                    arr.offsets.try_into()?,
-                    child,
+                    AT::Map(Box::new(field), sorted),
+                    offsets.try_into()?,
+                    entries,
                     validity,
                 )))
             }
@@ -440,7 +449,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 let mut fields = Vec::new();
                 let mut type_ids = Vec::new();
 
-                for (type_id, child, meta) in arr.fields {
+                for (type_id, meta, child) in arr.fields {
                     let child: Box<dyn arrow2::array::Array> = child.try_into()?;
                     let field = field_from_array_and_meta(child.as_ref(), meta);
 
@@ -758,8 +767,8 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             let mut fields = Vec::new();
             for (child_field, child) in child_fields.iter().zip(array.values()) {
                 fields.push((
-                    child.as_ref().try_into()?,
                     meta_from_field(child_field.try_into()?),
+                    child.as_ref().try_into()?,
                 ));
             }
             Ok(V::Struct(StructView {
@@ -768,22 +777,22 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 fields,
             }))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::MapArray>() {
-            let AT::Map(field, _) = array.data_type() else {
+            let Some((entries_name, sorted)) = map_meta_from_data_type(array.data_type()) else {
                 fail!(
                     ErrorKind::Unsupported,
                     "invalid data type for arrow2 Map array: {:?}",
                     array.data_type(),
                 );
             };
-            let meta = meta_from_field(field.as_ref().try_into()?);
-            let element: View<'_> = array.field().as_ref().try_into()?;
+            let entries_view: View<'_> = array.field().as_ref().try_into()?;
 
-            Ok(V::Map(ListView {
-                elements: Box::new(element),
-                meta,
-                validity: bits_with_offset_from_bitmap(array.validity()),
-                offsets: array.offsets().as_slice(),
-            }))
+            Ok(View::Map(MapView::from_logical_view(
+                entries_view,
+                entries_name,
+                sorted,
+                bits_with_offset_from_bitmap(array.validity()),
+                array.offsets().as_slice(),
+            )?))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::UnionArray>() {
             let AT::Union(union_fields, type_ids, arrow2::datatypes::UnionMode::Dense) =
                 array.data_type()
@@ -818,8 +827,8 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             {
                 fields.push((
                     (*type_id).try_into()?,
-                    child.as_ref().try_into()?,
                     meta_from_field(child_field.try_into()?),
+                    child.as_ref().try_into()?,
                 ));
             }
 
@@ -859,6 +868,16 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             );
         }
     }
+}
+
+fn map_meta_from_data_type(data_type: &arrow2::datatypes::DataType) -> Option<(String, bool)> {
+    let arrow2::datatypes::DataType::Map(entries_field, sorted) = data_type else {
+        return None;
+    };
+    if entries_field.is_nullable || !entries_field.metadata.is_empty() {
+        return None;
+    }
+    Some((entries_field.name.clone(), *sorted))
 }
 
 fn view_primitive_array<T: arrow2::types::NativeType>(

@@ -127,18 +127,18 @@ def _workflow_check_steps():
         *(
             {
                 "name": f"Check {feature}",
-                "run": f"cargo check --features {feature}",
+                "run": f"cargo check -p marrow --features {feature}",
             }
             for feature in ("serde", *all_arrow2_features, *all_arrow_features)
         ),
         {"name": "Check", "run": "cargo check --all-features"},
         {
             "name": "Build",
-            "run": f"cargo build --features {default_features}",
+            "run": "cargo build --all-features",
         },
         {
             "name": "Test",
-            "run": f"cargo test --features {default_features}",
+            "run": "cargo test --all-features",
         },
     ]
 
@@ -147,16 +147,15 @@ def _workflow_check_steps():
 def format():
     _sh(f"{python} -m black {_q(__file__)}")
     _sh("cargo fmt")
+
     # the impl files are not found by cargo fmt
-    _sh(
-        f"""
-        rustfmt
-            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_37.rs')}
-            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_47.rs')}
-            {_q(self_path / 'marrow' / 'src' / 'impl_arrow' / 'impl_api_base.rs')}
-            {_q(self_path / 'marrow' / 'src' / 'impl_arrow2' / 'impl.rs')}
-    """
-    )
+    impl_files = [
+        *self_path.joinpath("marrow", "src", "impl_arrow").glob("impl*.rs"),
+        *self_path.joinpath("marrow", "src", "impl_arrow2").glob("impl*.rs"),
+        *self_path.joinpath("test_with_arrow", "src", "tests").glob("*.rs"),
+    ]
+
+    _sh(f"rustfmt {_q(impl_files)}")
 
 
 @cmd(help="Run the linters")
@@ -168,7 +167,7 @@ def check(all=False):
 
     if all:
         for features in ("serde", *all_arrow2_features, *all_arrow_features):
-            _sh(f"cargo check --features {features}")
+            _sh(f"cargo check -p marrow --features {features}")
 
 
 @cmd(help="Run the tests")
@@ -179,36 +178,32 @@ def check(all=False):
     help="If given, print a backtrace on error",
 )
 @arg(
-    "--full",
+    "--all",
     action="store_true",
     default=False,
     help="If given, run all feature combinations",
 )
-@arg("test_name", nargs="?", help="Filter of test names")
-def test(test_name=None, backtrace=False, full=False):
-    if not full:
-        feature_selections = [f"--features {default_features}"]
+def test(backtrace=False, all=False):
+    feature_selection = (
+        f"--features {default_features}" if not all else "--all-features"
+    )
+    env = {"RUST_BACKTRACE": "1"} if backtrace else {}
 
-    else:
-        feature_selections = [
-            (
-                f"--features {', '.join(arrow_feature + arrow2_feature)}"
-                if arrow_feature or arrow2_feature
-                else ""
-            )
-            for arrow_feature in [[], *([feat] for feat in all_arrow_features)]
-            for arrow2_feature in [[], *([feat] for feat in all_arrow2_features)]
-        ]
+    _sh(f"cargo test {feature_selection}", env=env)
 
-    for feature_selection in feature_selections:
-        _sh(
-            f"""
-                cargo test
-                    {feature_selection}
-                    {_q(test_name) if test_name else ''}
-            """,
-            env=({"RUST_BACKTRACE": "1"} if backtrace else {}),
-        )
+
+@cmd(help="Generate the documentation")
+@arg("--private", action="store_true", default=False)
+@arg("--open", action="store_true", default=False)
+def doc(private=False, open=False):
+    _sh(
+        f"""
+            cargo doc
+                --features {default_features}
+                {'--document-private-items' if private else ''}
+                {'--open' if open else ''}
+        """,
+    )
 
 
 @cmd()
@@ -285,20 +280,6 @@ def check_cargo_toml():
                 raise ValueError(f"Default features for {name} not deactivated")
 
 
-@cmd(help="Generate the documentation")
-@arg("--private", action="store_true", default=False)
-@arg("--open", action="store_true", default=False)
-def doc(private=False, open=False):
-    _sh(
-        f"""
-            cargo doc
-                --features {default_features}
-                {'--document-private-items' if private else ''}
-                {'--open' if open else ''}
-        """,
-    )
-
-
 @cmd(help="Add a new arrow version")
 @arg("version")
 def add_arrow_version(version):
@@ -356,7 +337,12 @@ _sh = lambda c, env=(), **kw: __import__("subprocess").run(
         **kw,
     },
 )
-_q = lambda arg: __import__("shlex").quote(str(arg))
+_q = (
+    lambda a: __import__("shlex").quote(str(a))
+    if not isinstance(a, (tuple, list))
+    else " ".join(_q(i) for i in a)
+)
+
 
 if __name__ == "__main__":
     _sps = (_p := __import__("argparse").ArgumentParser()).add_subparsers()

@@ -9,14 +9,14 @@ use crate::{
     error::{fail, ErrorKind, MarrowError, Result},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeListView, ListView, NullView, PrimitiveView, StructView, TimeView, TimestampView,
-        View,
+        FixedSizeListView, ListView, MapView, NullView, PrimitiveView, StructView, TimeView,
+        TimestampView, View,
     },
 };
 
 impl From<arrow_schema::ArrowError> for MarrowError {
     fn from(err: arrow_schema::ArrowError) -> Self {
-        crate::error::error_with_kind_message_cause(ErrorKind::ArrowError, err.to_string(), err)
+        MarrowError::with_cause(ErrorKind::ArrowError, err.to_string(), err)
     }
 }
 
@@ -358,7 +358,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             let mut fields = Vec::new();
             let mut data = Vec::new();
 
-            for (field, meta) in arr.fields {
+            for (meta, field) in arr.fields {
                 let child = build_array_data(field)?;
                 fields.push(Arc::new(field_from_data_and_meta(&child, meta)));
                 data.push(child);
@@ -446,22 +446,30 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
                 .build()?)
         }
         A::Map(arr) => {
-            let child = build_array_data(*arr.elements)?;
-            let field = field_from_data_and_meta(&child, arr.meta);
+            let (entries, entries_name, sorted, validity, offsets) = arr.into_logical_array()?;
+            let entries = build_array_data(entries)?;
+            let field = field_from_data_and_meta(
+                &entries,
+                FieldMeta {
+                    name: entries_name,
+                    ..FieldMeta::default()
+                },
+            );
+
             Ok(arrow_data::ArrayData::try_new(
-                arrow_schema::DataType::Map(Arc::new(field), false),
-                arr.offsets.len().saturating_sub(1),
-                arr.validity.map(arrow_buffer::Buffer::from_vec),
+                arrow_schema::DataType::Map(Arc::new(field), sorted),
+                offsets.len().saturating_sub(1),
+                validity.map(arrow_buffer::Buffer::from_vec),
                 0,
-                vec![arrow_buffer::ScalarBuffer::from(arr.offsets).into_inner()],
-                vec![child],
+                vec![arrow_buffer::ScalarBuffer::from(offsets).into_inner()],
+                vec![entries],
             )?)
         }
         A::DenseUnion(arr) => {
             let mut fields = Vec::new();
             let mut child_data = Vec::new();
 
-            for (type_id, array, meta) in arr.fields {
+            for (type_id, meta, array) in arr.fields {
                 let child = build_array_data(array)?;
                 let field = field_from_data_and_meta(&child, meta);
 
@@ -749,7 +757,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             for (field, array) in std::iter::zip(column_fields, array.columns()) {
                 let view = View::try_from(array.as_ref())?;
                 let meta = meta_from_field(Field::try_from(field.as_ref())?);
-                fields.push((view, meta));
+                fields.push((meta, view));
             }
 
             Ok(View::Struct(StructView {
@@ -758,21 +766,22 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 fields,
             }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::MapArray>() {
-            let arrow_schema::DataType::Map(entries_field, _) = array.data_type() else {
+            let Some((entries_name, sorted)) = map_meta_from_data_type(array.data_type()) else {
                 fail!(
                     ErrorKind::Unsupported,
                     "invalid data type for map array: {}",
                     array.data_type()
                 );
             };
-            let entries_array: &dyn arrow_array::Array = array.entries();
+            let entries_view = View::try_from(array.entries() as &dyn arrow_array::Array)?;
 
-            Ok(View::Map(ListView {
-                validity: get_bits_with_offset(array),
-                offsets: array.value_offsets(),
-                meta: meta_from_field(Field::try_from(entries_field.as_ref())?),
-                elements: Box::new(entries_array.try_into()?),
-            }))
+            Ok(View::Map(MapView::from_logical_view(
+                entries_view,
+                entries_name,
+                sorted,
+                get_bits_with_offset(array),
+                array.value_offsets(),
+            )?))
         } else if let Some(array) = any.downcast_ref::<arrow_array::UInt8DictionaryArray>() {
             wrap_dictionary_array::<arrow_array::types::UInt8Type>(array)
         } else if let Some(array) = any.downcast_ref::<arrow_array::UInt16DictionaryArray>() {
@@ -805,7 +814,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             for (type_id, field) in union_fields.iter() {
                 let meta = meta_from_field(Field::try_from(field.as_ref())?);
                 let view: View = array.child(type_id).as_ref().try_into()?;
-                fields.push((type_id, view, meta));
+                fields.push((type_id, meta, view));
             }
             let Some(offsets) = array.offsets() else {
                 fail!(
@@ -827,6 +836,16 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             );
         }
     }
+}
+
+fn map_meta_from_data_type(data_type: &arrow_schema::DataType) -> Option<(String, bool)> {
+    let arrow_schema::DataType::Map(entries_field, sorted) = data_type else {
+        return None;
+    };
+    if entries_field.is_nullable() || !entries_field.metadata().is_empty() {
+        return None;
+    }
+    Some((entries_field.name().clone(), *sorted))
 }
 
 fn field_from_data_and_meta(data: &arrow_data::ArrayData, meta: FieldMeta) -> arrow_schema::Field {

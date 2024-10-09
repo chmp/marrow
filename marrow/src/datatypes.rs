@@ -3,6 +3,19 @@ use std::collections::HashMap;
 
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
+// assert that the `DataType` implements the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
+    impl AssertExpectedTraits for DataType {}
+};
+
+// assert that the `Field` and `FieldMeta` implement the expected traits
+const _: () = {
+    trait AssertExpectedTraits: Clone + std::fmt::Debug + Default + PartialEq + Send + Sync {}
+    impl AssertExpectedTraits for Field {}
+    impl AssertExpectedTraits for FieldMeta {}
+};
+
 /// The data type and metadata of a field
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -17,8 +30,19 @@ pub struct Field {
     pub metadata: HashMap<String, String>,
 }
 
+impl std::default::Default for Field {
+    fn default() -> Self {
+        Self {
+            data_type: DataType::Null,
+            name: Default::default(),
+            nullable: Default::default(),
+            metadata: Default::default(),
+        }
+    }
+}
+
 /// Metadata for a field (everything but the data type)
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct FieldMeta {
     /// The name of the field
     pub name: String,
@@ -37,13 +61,68 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
     }
 }
 
+/// Metadata for map arrays
+///
+/// ```rust
+/// # use marrow::datatypes::{FieldMeta, MapMeta};
+/// assert_eq!(
+///     MapMeta::default(),
+///     MapMeta {
+///         entries_name: String::from("entries"),
+///         sorted: false,
+///         keys: FieldMeta {
+///             name: String::from("keys"),
+///             ..FieldMeta::default()
+///         },
+///         values: FieldMeta {
+///             name: String::from("values"),
+///             nullable: true,
+///             ..FieldMeta::default()
+///         },
+///     },
+/// );
+/// ```
+///
+/// Note: the defaults follow the defaults of `arrow`'s MapBuilder.
+///
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MapMeta {
+    /// The name of the entries field (defaults to `"entries"`)
+    pub entries_name: String,
+    /// Whether the maps are sorted (defaults to `false`)
+    pub sorted: bool,
+    /// The metadata of the keys array (defaults to a non-nullable field with name `"keys"`)
+    pub keys: FieldMeta,
+    /// The metadata of the values array (defaults to a nullable field with name `"values"`)
+    pub values: FieldMeta,
+}
+
+impl std::default::Default for MapMeta {
+    fn default() -> Self {
+        MapMeta {
+            entries_name: String::from("entries"),
+            sorted: false,
+            keys: FieldMeta {
+                name: String::from("keys"),
+                nullable: false,
+                metadata: HashMap::new(),
+            },
+            values: FieldMeta {
+                name: String::from("values"),
+                nullable: true,
+                metadata: HashMap::new(),
+            },
+        }
+    }
+}
+
 /// Data types of array
 ///
 #[cfg_attr(
 // arrow-version: replace:     feature = "arrow-{version}",
     feature = "arrow-53",
     doc = r#"
-See also [`arrow::datatypes::DataType`][crate::_impl::arrow::datatypes::DataType]
+See also [`arrow::datatypes::DataType`][crate::_with_latest_arrow::arrow::datatypes::DataType]
 "#,
 )]
 #[derive(Debug, Clone, PartialEq, Eq)]

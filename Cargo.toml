@@ -1,6 +1,6 @@
 [workspace]
-members = ["marrow"]
-default-members = ["marrow"]
+members = ["marrow", "test_with_arrow"]
+default-members = ["marrow", "test_with_arrow"]
 
 resolver = "2"
 
