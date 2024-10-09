@@ -189,6 +189,7 @@ def test(backtrace=False, all=False):
     )
     env = {"RUST_BACKTRACE": "1"} if backtrace else {}
 
+    _sh("cargo test --features serde", env=env)
     _sh(f"cargo test {feature_selection}", env=env)
 
 
