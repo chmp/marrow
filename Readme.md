@@ -7,6 +7,17 @@
 interface. The motivation behind `marrow` is to allow libraries to target multiple different arrow
 versions simultaneously.
 
+## Development
+
+All important development tasks are packaged in the `x.py` script. It does not require any external
+dependencies and can be executed with any recent Python version.
+
+- `python x.py precommit`: wrapper around `format`, `check`, `test`
+- `python x.py test`: execute the tests
+- `python x.py check`: run linters
+- `python x.py format`: format the source code
+- `cargo test --all-features` execute the tests without the `x.py` script
+
 ## License
 
 ```text
