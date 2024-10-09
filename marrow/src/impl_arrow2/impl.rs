@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::{
     array::{Array, PrimitiveArray},
     datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
-    error::{error_with_kind_message_cause, fail, ErrorKind, MarrowError, Result},
+    error::{fail, ErrorKind, MarrowError, Result},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
@@ -13,7 +13,7 @@ use crate::{
 
 impl From<arrow2::error::Error> for MarrowError {
     fn from(err: arrow2::error::Error) -> MarrowError {
-        error_with_kind_message_cause(ErrorKind::ArrowError, format!("arrow2::Error: {err}"), err)
+        MarrowError::with_cause(ErrorKind::ArrowError, format!("arrow2::Error: {err}"), err)
     }
 }
 

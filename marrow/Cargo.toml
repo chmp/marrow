@@ -127,11 +127,3 @@ arrow2-0-17 = { package = "arrow2", version = "0.17", optional = true, default-f
 arrow2-0-16 = { package = "arrow2", version = "0.16", optional = true, default-features = false }
 
 bytemuck = { version = "1", optional = true, default-features = false }
-
-[dev-dependencies]
-chrono = { version = "0.4", default-features = false }
-serde = { version = "1.0", features = ["derive", "std"], default-features = false }
-serde_json = { version = "1.0" }
-
-# arrow-version:replace: arrow-schema-{version} = { package = "arrow-schema", version = "{version}", default-features = false, features = ["serde"] }
-arrow-schema-53 = { package = "arrow-schema", version = "53", default-features = false, features = ["serde"] }

@@ -16,7 +16,7 @@ use crate::{
 
 impl From<arrow_schema::ArrowError> for MarrowError {
     fn from(err: arrow_schema::ArrowError) -> Self {
-        crate::error::error_with_kind_message_cause(ErrorKind::ArrowError, err.to_string(), err)
+        MarrowError::with_cause(ErrorKind::ArrowError, err.to_string(), err)
     }
 }
 

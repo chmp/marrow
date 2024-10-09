@@ -1,4 +1,5 @@
 //! Support for arrow2
+#![cfg_attr(any(), rustfmt::skip)]
 
 #[cfg(feature = "arrow2-0-17")]
 mod arrow2_0_17 {

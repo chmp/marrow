@@ -1,10 +1,7 @@
-use super::super::arrow;
+use arrow_schema::{DataType as AD, TimeUnit as AU};
+use marrow::datatypes::{DataType, TimeUnit};
 
-use crate::{
-    datatypes::{DataType, TimeUnit},
-    testing::PanicOnError,
-};
-use arrow::datatypes::{DataType as AD, TimeUnit as AU};
+use super::utils::PanicOnError;
 
 fn assert_symmetric_conversion(arrow: AD, marrow: DataType) -> PanicOnError<()> {
     // conversion via try-from

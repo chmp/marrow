@@ -175,6 +175,7 @@ pub struct MapView<'a> {
 }
 
 impl<'a> MapView<'a> {
+    #[allow(unused)]
     pub(crate) fn from_logical_view(
         entries: View<'a>,
         entries_name: String,

@@ -18,6 +18,32 @@ pub type Result<T, E = MarrowError> = std::result::Result<T, E>;
 /// to include the backtrace information.
 pub struct MarrowError(Box<ErrorImpl>);
 
+impl MarrowError {
+    /// Create a new error
+    pub fn new(kind: ErrorKind, message: String) -> Self {
+        MarrowError(Box::new(ErrorImpl {
+            kind,
+            message,
+            backtrace: Backtrace::capture(),
+            cause: None,
+        }))
+    }
+
+    /// Create a new error with a cause
+    pub fn with_cause(
+        kind: ErrorKind,
+        message: String,
+        cause: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        MarrowError(Box::new(ErrorImpl {
+            kind,
+            message,
+            backtrace: Backtrace::capture(),
+            cause: Some(Box::new(cause)),
+        }))
+    }
+}
+
 /// The kind of error to simplify matching against known error conditions
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ErrorKind {
@@ -120,7 +146,7 @@ impl<'a> std::fmt::Display for BacktraceDisplay<'a> {
 
 macro_rules! fail {
     ($kind:expr, $($msg:tt)*) => {
-        return Err($crate::error::error_with_kind_and_message($kind, format!($($msg)*)))
+        return Err($crate::error::MarrowError::new($kind, format!($($msg)*)))
     };
 }
 
@@ -128,31 +154,9 @@ use std::backtrace::{Backtrace, BacktraceStatus};
 
 pub(crate) use fail;
 
-pub(crate) fn error_with_kind_and_message(kind: ErrorKind, message: String) -> MarrowError {
-    MarrowError(Box::new(ErrorImpl {
-        kind,
-        message,
-        backtrace: Backtrace::capture(),
-        cause: None,
-    }))
-}
-
-pub(crate) fn error_with_kind_message_cause(
-    kind: ErrorKind,
-    message: String,
-    cause: impl std::error::Error + Send + Sync + 'static,
-) -> MarrowError {
-    MarrowError(Box::new(ErrorImpl {
-        kind,
-        message,
-        backtrace: Backtrace::capture(),
-        cause: Some(Box::new(cause)),
-    }))
-}
-
 impl From<std::num::TryFromIntError> for MarrowError {
     fn from(err: std::num::TryFromIntError) -> MarrowError {
-        error_with_kind_message_cause(
+        MarrowError::with_cause(
             ErrorKind::Unsupported,
             format!("TryFromIntError: {err}"),
             err,

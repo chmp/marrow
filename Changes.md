@@ -8,6 +8,7 @@
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`
 - Implement `Default` for `Field` and `FieldMeta`
 - Add `as_view` for `Array` and the array structs
+- Add `MarrowError::new` and `MarrowError::with_cause`
 
 ## 0.1.0
 

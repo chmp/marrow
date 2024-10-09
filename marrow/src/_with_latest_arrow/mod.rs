@@ -3,6 +3,3 @@
 //! Functionality that is available when the latest arrow version is enabled.
 
 pub mod arrow;
-
-#[cfg(test)]
-mod test;

@@ -769,18 +769,27 @@ name = "arrow-schema"
 version = "50.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ff3e9c01f7cd169379d269f926892d0e622a704960350d09d331be3ec9e0029"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "arrow-schema"
 version = "51.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02d9483aaabe910c4781153ae1b6ae0393f72d9ef757d38d09d450070cf2e528"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "arrow-schema"
 version = "52.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e972cd1ff4a4ccd22f86d3e53e835c2ed92e0eea6a3e8eadb72b4f1ac802cf8"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "arrow-schema"
@@ -1126,10 +1135,8 @@ dependencies = [
  "arrow2 0.16.0",
  "arrow2 0.17.4",
  "bytemuck",
- "chrono",
  "half",
  "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -1319,6 +1326,24 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "test_with_arrow"
+version = "0.1.0"
+dependencies = [
+ "arrow-array 50.0.0",
+ "arrow-array 51.0.0",
+ "arrow-array 52.2.0",
+ "arrow-array 53.0.0",
+ "arrow-schema 50.0.0",
+ "arrow-schema 51.0.0",
+ "arrow-schema 52.2.0",
+ "arrow-schema 53.0.0",
+ "chrono",
+ "half",
+ "marrow",
+ "serde_json",
 ]
 
 [[package]]

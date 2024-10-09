@@ -140,13 +140,8 @@ pub mod error;
 #[deny(missing_docs)]
 pub mod view;
 
-#[rustfmt::skip]
 mod impl_arrow;
-#[rustfmt::skip]
 mod impl_arrow2;
-
-#[cfg(test)]
-mod testing;
 
 // arrow-version: replace: #[cfg(feature = "arrow-{version}")]
 #[cfg(feature = "arrow-53")]

@@ -307,7 +307,7 @@ impl MapArray {
 }
 
 impl MapArray {
-    #[allow(clippy::type_complexity)]
+    #[allow(clippy::type_complexity, unused)]
     pub(crate) fn into_logical_array(
         self,
     ) -> Result<(Array, String, bool, Option<Vec<u8>>, Vec<i32>)> {

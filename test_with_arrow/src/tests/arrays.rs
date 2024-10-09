@@ -1,50 +1,20 @@
 use std::sync::Arc;
 
-use super::super::arrow;
-
-use crate::{
+use marrow::{
     array::{
-        Array, BooleanArray, BytesArray, DenseUnionArray, FixedSizeBinaryArray, FixedSizeListArray,
-        ListArray, MapArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
+        Array, BooleanArray, BytesArray, FixedSizeBinaryArray, FixedSizeListArray, ListArray,
+        MapArray, NullArray, PrimitiveArray, TimeArray, TimestampArray,
     },
     datatypes::{FieldMeta, MapMeta, TimeUnit},
-    testing::{view_as, PanicOnError},
     view::{BitsWithOffset, PrimitiveView, View},
 };
 
-fn as_array_ref<A: arrow::array::Array + 'static>(values: impl Into<A>) -> arrow::array::ArrayRef {
-    Arc::new(values.into()) as arrow::array::ArrayRef
-}
-
-fn assert_arrays_eq(
-    array_via_arrow: arrow::array::ArrayRef,
-    marrow_array: Array,
-) -> PanicOnError<()> {
-    let array_via_marrow = arrow::array::ArrayRef::try_from(marrow_array.clone())?;
-    assert_eq!(
-        array_via_arrow.data_type(),
-        array_via_marrow.data_type(),
-        "arrow (left) != marrow (right)"
-    );
-    assert_eq!(
-        &array_via_arrow, &array_via_marrow,
-        "arrow (left) != marrow (right)"
-    );
-
-    let view_via_arrow = View::try_from(&*array_via_arrow)?;
-    let view_via_marrow = marrow_array.as_view();
-    assert_eq!(
-        view_via_arrow, view_via_marrow,
-        "arrow (left) != marrow (right)"
-    );
-
-    Ok(())
-}
+use super::utils::{as_array_ref, assert_arrays_eq, view_as, PanicOnError};
 
 #[test]
 fn slicing() -> PanicOnError<()> {
     let array_via_arrow =
-        as_array_ref::<arrow::array::Int64Array>(vec![Some(1), Some(-2), None, None]);
+        as_array_ref::<arrow_array::Int64Array>(vec![Some(1), Some(-2), None, None]);
 
     assert_eq!(
         view_as!(View::Int64, array_via_arrow)?,
@@ -111,12 +81,12 @@ fn slicing() -> PanicOnError<()> {
 mod null {
     use super::*;
 
-    use arrow::array::ArrayRef;
+    use arrow_array::ArrayRef;
 
     #[test]
     fn example() -> PanicOnError<()> {
         assert_arrays_eq(
-            Arc::new(arrow::array::NullArray::new(3)) as ArrayRef,
+            Arc::new(arrow_array::NullArray::new(3)) as ArrayRef,
             Array::Null(NullArray { len: 3 }),
         )
     }
@@ -128,7 +98,7 @@ mod boolean {
     #[test]
     fn non_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::BooleanArray>(vec![true, true, false, false, false]),
+            as_array_ref::<arrow_array::BooleanArray>(vec![true, true, false, false, false]),
             Array::Boolean(BooleanArray {
                 len: 5,
                 validity: None,
@@ -140,7 +110,7 @@ mod boolean {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::BooleanArray>(vec![
+            as_array_ref::<arrow_array::BooleanArray>(vec![
                 Some(true),
                 None,
                 None,
@@ -162,7 +132,7 @@ mod int8 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int8Array>(vec![1, -2, 3, -4]),
+            as_array_ref::<arrow_array::Int8Array>(vec![1, -2, 3, -4]),
             Array::Int8(PrimitiveArray {
                 validity: None,
                 values: vec![1, -2, 3, -4],
@@ -173,7 +143,7 @@ mod int8 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int8Array>(vec![Some(1), Some(-2), None, None]),
+            as_array_ref::<arrow_array::Int8Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int8(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, -2, 0, 0],
@@ -188,7 +158,7 @@ mod int16 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int16Array>(vec![1, -2, 3, -4]),
+            as_array_ref::<arrow_array::Int16Array>(vec![1, -2, 3, -4]),
             Array::Int16(PrimitiveArray {
                 validity: None,
                 values: vec![1, -2, 3, -4],
@@ -199,7 +169,7 @@ mod int16 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int16Array>(vec![Some(1), Some(-2), None, None]),
+            as_array_ref::<arrow_array::Int16Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int16(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, -2, 0, 0],
@@ -214,7 +184,7 @@ mod int32 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int32Array>(vec![1, -2, 3, -4]),
+            as_array_ref::<arrow_array::Int32Array>(vec![1, -2, 3, -4]),
             Array::Int32(PrimitiveArray {
                 validity: None,
                 values: vec![1, -2, 3, -4],
@@ -225,7 +195,7 @@ mod int32 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int32Array>(vec![Some(1), Some(-2), None, None]),
+            as_array_ref::<arrow_array::Int32Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int32(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, -2, 0, 0],
@@ -240,7 +210,7 @@ mod int64 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int64Array>(vec![1, -2, 3, -4]),
+            as_array_ref::<arrow_array::Int64Array>(vec![1, -2, 3, -4]),
             Array::Int64(PrimitiveArray {
                 validity: None,
                 values: vec![1, -2, 3, -4],
@@ -251,7 +221,7 @@ mod int64 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Int64Array>(vec![Some(1), Some(-2), None, None]),
+            as_array_ref::<arrow_array::Int64Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int64(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, -2, 0, 0],
@@ -266,7 +236,7 @@ mod uint8 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt8Array>(vec![1, 2, 3, 4]),
+            as_array_ref::<arrow_array::UInt8Array>(vec![1, 2, 3, 4]),
             Array::UInt8(PrimitiveArray {
                 validity: None,
                 values: vec![1, 2, 3, 4],
@@ -277,7 +247,7 @@ mod uint8 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt8Array>(vec![Some(1), Some(2), None, None]),
+            as_array_ref::<arrow_array::UInt8Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt8(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, 2, 0, 0],
@@ -292,7 +262,7 @@ mod uint16 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt16Array>(vec![1, 2, 3, 4]),
+            as_array_ref::<arrow_array::UInt16Array>(vec![1, 2, 3, 4]),
             Array::UInt16(PrimitiveArray {
                 validity: None,
                 values: vec![1, 2, 3, 4],
@@ -303,7 +273,7 @@ mod uint16 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt16Array>(vec![Some(1), Some(2), None, None]),
+            as_array_ref::<arrow_array::UInt16Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt16(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, 2, 0, 0],
@@ -318,7 +288,7 @@ mod uint32 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt32Array>(vec![1, 2, 3, 4]),
+            as_array_ref::<arrow_array::UInt32Array>(vec![1, 2, 3, 4]),
             Array::UInt32(PrimitiveArray {
                 validity: None,
                 values: vec![1, 2, 3, 4],
@@ -329,7 +299,7 @@ mod uint32 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt32Array>(vec![Some(1), Some(2), None, None]),
+            as_array_ref::<arrow_array::UInt32Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt32(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, 2, 0, 0],
@@ -344,7 +314,7 @@ mod uint64 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt64Array>(vec![1, 2, 3, 4]),
+            as_array_ref::<arrow_array::UInt64Array>(vec![1, 2, 3, 4]),
             Array::UInt64(PrimitiveArray {
                 validity: None,
                 values: vec![1, 2, 3, 4],
@@ -355,7 +325,7 @@ mod uint64 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::UInt64Array>(vec![Some(1), Some(2), None, None]),
+            as_array_ref::<arrow_array::UInt64Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt64(PrimitiveArray {
                 validity: Some(vec![0b_0011]),
                 values: vec![1, 2, 0, 0],
@@ -372,7 +342,7 @@ mod float16 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float16Array>(vec![
+            as_array_ref::<arrow_array::Float16Array>(vec![
                 f16::from_f64(13.0),
                 f16::from_f64(21.0),
                 f16::from_f64(42.0),
@@ -391,7 +361,7 @@ mod float16 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float16Array>(vec![None, None, Some(f16::from_f64(42.0))]),
+            as_array_ref::<arrow_array::Float16Array>(vec![None, None, Some(f16::from_f64(42.0))]),
             Array::Float16(PrimitiveArray {
                 validity: Some(vec![0b_100]),
                 values: vec![f16::from_f64(0.0), f16::from_f64(0.0), f16::from_f64(42.0)],
@@ -406,7 +376,7 @@ mod float32 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float32Array>(vec![13.0, 21.0, 42.0]),
+            as_array_ref::<arrow_array::Float32Array>(vec![13.0, 21.0, 42.0]),
             Array::Float32(PrimitiveArray {
                 validity: None,
                 values: vec![13.0, 21.0, 42.0],
@@ -417,7 +387,7 @@ mod float32 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float32Array>(vec![None, None, Some(42.0)]),
+            as_array_ref::<arrow_array::Float32Array>(vec![None, None, Some(42.0)]),
             Array::Float32(PrimitiveArray {
                 validity: Some(vec![0b_100]),
                 values: vec![0.0, 0.0, 42.0],
@@ -432,7 +402,7 @@ mod float64 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float64Array>(vec![13.0, 21.0, 42.0]),
+            as_array_ref::<arrow_array::Float64Array>(vec![13.0, 21.0, 42.0]),
             Array::Float64(PrimitiveArray {
                 validity: None,
                 values: vec![13.0, 21.0, 42.0],
@@ -443,7 +413,7 @@ mod float64 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Float64Array>(vec![None, None, Some(42.0)]),
+            as_array_ref::<arrow_array::Float64Array>(vec![None, None, Some(42.0)]),
             Array::Float64(PrimitiveArray {
                 validity: Some(vec![0b_100]),
                 values: vec![0.0, 0.0, 42.0],
@@ -455,7 +425,7 @@ mod float64 {
 mod date32 {
     use super::*;
 
-    use arrow::datatypes::Date32Type;
+    use arrow_array::types::Date32Type;
     use chrono::NaiveDate;
 
     fn ymd_as_num(y: i32, m: u32, d: u32) -> i32 {
@@ -466,7 +436,7 @@ mod date32 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Date32Array>(vec![
+            as_array_ref::<arrow_array::Date32Array>(vec![
                 Date32Type::from_naive_date(NaiveDate::from_ymd_opt(2024, 10, 8).unwrap()),
                 Date32Type::from_naive_date(NaiveDate::from_ymd_opt(-10, 12, 31).unwrap()),
             ]),
@@ -480,7 +450,7 @@ mod date32 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Date32Array>(vec![
+            as_array_ref::<arrow_array::Date32Array>(vec![
                 Some(Date32Type::from_naive_date(
                     NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
                 )),
@@ -500,7 +470,7 @@ mod date32 {
 mod date64 {
     use super::*;
 
-    use arrow::datatypes::Date64Type;
+    use arrow_array::types::Date64Type;
     use chrono::NaiveDate;
 
     fn ymd_as_num(y: i32, m: u32, d: u32) -> i64 {
@@ -512,7 +482,7 @@ mod date64 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Date64Array>(vec![
+            as_array_ref::<arrow_array::Date64Array>(vec![
                 Date64Type::from_naive_date(NaiveDate::from_ymd_opt(2024, 10, 8).unwrap()),
                 Date64Type::from_naive_date(NaiveDate::from_ymd_opt(-10, 12, 31).unwrap()),
             ]),
@@ -526,7 +496,7 @@ mod date64 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Date64Array>(vec![
+            as_array_ref::<arrow_array::Date64Array>(vec![
                 Some(Date64Type::from_naive_date(
                     NaiveDate::from_ymd_opt(2024, 10, 8).unwrap(),
                 )),
@@ -549,7 +519,7 @@ mod time32_seconds {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time32SecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::Time32SecondArray>(vec![1, 2, 3]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Second,
                 validity: None,
@@ -561,7 +531,7 @@ mod time32_seconds {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time32SecondArray>(vec![None, None, Some(3), Some(4)]),
+            as_array_ref::<arrow_array::Time32SecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Second,
                 validity: Some(vec![0b_1100]),
@@ -577,7 +547,7 @@ mod time32_milliseconds {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time32MillisecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::Time32MillisecondArray>(vec![1, 2, 3]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Millisecond,
                 validity: None,
@@ -589,12 +559,7 @@ mod time32_milliseconds {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time32MillisecondArray>(vec![
-                None,
-                None,
-                Some(3),
-                Some(4),
-            ]),
+            as_array_ref::<arrow_array::Time32MillisecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Millisecond,
                 validity: Some(vec![0b_1100]),
@@ -610,7 +575,7 @@ mod time64_microsecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time64MicrosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::Time64MicrosecondArray>(vec![1, 2, 3]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Microsecond,
                 validity: None,
@@ -622,12 +587,7 @@ mod time64_microsecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time64MicrosecondArray>(vec![
-                None,
-                None,
-                Some(3),
-                Some(4),
-            ]),
+            as_array_ref::<arrow_array::Time64MicrosecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Microsecond,
                 validity: Some(vec![0b_1100]),
@@ -643,7 +603,7 @@ mod time64_nanosecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time64NanosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::Time64NanosecondArray>(vec![1, 2, 3]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Nanosecond,
                 validity: None,
@@ -655,7 +615,7 @@ mod time64_nanosecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::Time64NanosecondArray>(vec![None, None, Some(3), Some(4)]),
+            as_array_ref::<arrow_array::Time64NanosecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Nanosecond,
                 validity: Some(vec![0b_1100]),
@@ -671,7 +631,7 @@ mod duration_second {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationSecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::DurationSecondArray>(vec![1, 2, 3]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Second,
                 validity: None,
@@ -683,7 +643,7 @@ mod duration_second {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationSecondArray>(vec![None, None, Some(3), Some(4)]),
+            as_array_ref::<arrow_array::DurationSecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Second,
                 validity: Some(vec![0b_1100]),
@@ -699,7 +659,7 @@ mod duration_millisecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationMillisecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::DurationMillisecondArray>(vec![1, 2, 3]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Millisecond,
                 validity: None,
@@ -711,7 +671,7 @@ mod duration_millisecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationMillisecondArray>(vec![
+            as_array_ref::<arrow_array::DurationMillisecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -732,7 +692,7 @@ mod duration_microsecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationMicrosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::DurationMicrosecondArray>(vec![1, 2, 3]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Microsecond,
                 validity: None,
@@ -744,7 +704,7 @@ mod duration_microsecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationMicrosecondArray>(vec![
+            as_array_ref::<arrow_array::DurationMicrosecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -765,7 +725,7 @@ mod duration_nanosecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationNanosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::DurationNanosecondArray>(vec![1, 2, 3]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Nanosecond,
                 validity: None,
@@ -777,7 +737,7 @@ mod duration_nanosecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::DurationNanosecondArray>(vec![
+            as_array_ref::<arrow_array::DurationNanosecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -798,7 +758,7 @@ mod timestamp_second {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampSecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::TimestampSecondArray>(vec![1, 2, 3]),
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: None,
@@ -811,7 +771,7 @@ mod timestamp_second {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampSecondArray>(vec![None, None, Some(3), Some(4)]),
+            as_array_ref::<arrow_array::TimestampSecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: None,
@@ -828,8 +788,8 @@ mod timestamp_second_utc {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            Arc::new(arrow::array::TimestampSecondArray::from(vec![1, 2, 3]).with_timezone("UTC"))
-                as arrow::array::ArrayRef,
+            Arc::new(arrow_array::TimestampSecondArray::from(vec![1, 2, 3]).with_timezone("UTC"))
+                as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: Some(String::from("UTC")),
@@ -843,9 +803,9 @@ mod timestamp_second_utc {
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampSecondArray::from(vec![None, None, Some(3), Some(4)])
+                arrow_array::TimestampSecondArray::from(vec![None, None, Some(3), Some(4)])
                     .with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: Some(String::from("UTC")),
@@ -862,7 +822,7 @@ mod timestamp_millisecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampMillisecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::TimestampMillisecondArray>(vec![1, 2, 3]),
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Millisecond,
                 timezone: None,
@@ -875,7 +835,7 @@ mod timestamp_millisecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampMillisecondArray>(vec![
+            as_array_ref::<arrow_array::TimestampMillisecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -898,8 +858,8 @@ mod timestamp_millisecond_utc {
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampMillisecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+                arrow_array::TimestampMillisecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Millisecond,
                 timezone: Some(String::from("UTC")),
@@ -913,9 +873,9 @@ mod timestamp_millisecond_utc {
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampMillisecondArray::from(vec![None, None, Some(3), Some(4)])
+                arrow_array::TimestampMillisecondArray::from(vec![None, None, Some(3), Some(4)])
                     .with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Millisecond,
                 timezone: Some(String::from("UTC")),
@@ -932,7 +892,7 @@ mod timestamp_microsecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampMicrosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::TimestampMicrosecondArray>(vec![1, 2, 3]),
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Microsecond,
                 timezone: None,
@@ -945,7 +905,7 @@ mod timestamp_microsecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampMicrosecondArray>(vec![
+            as_array_ref::<arrow_array::TimestampMicrosecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -968,8 +928,8 @@ mod timestamp_microsecond_utc {
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampMicrosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+                arrow_array::TimestampMicrosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Microsecond,
                 timezone: Some(String::from("UTC")),
@@ -983,9 +943,9 @@ mod timestamp_microsecond_utc {
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampMicrosecondArray::from(vec![None, None, Some(3), Some(4)])
+                arrow_array::TimestampMicrosecondArray::from(vec![None, None, Some(3), Some(4)])
                     .with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Microsecond,
                 timezone: Some(String::from("UTC")),
@@ -1002,7 +962,7 @@ mod timestamp_nanosecond {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampNanosecondArray>(vec![1, 2, 3]),
+            as_array_ref::<arrow_array::TimestampNanosecondArray>(vec![1, 2, 3]),
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Nanosecond,
                 timezone: None,
@@ -1015,7 +975,7 @@ mod timestamp_nanosecond {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::TimestampNanosecondArray>(vec![
+            as_array_ref::<arrow_array::TimestampNanosecondArray>(vec![
                 None,
                 None,
                 Some(3),
@@ -1038,8 +998,8 @@ mod timestamp_nanosecond_utc {
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampNanosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+                arrow_array::TimestampNanosecondArray::from(vec![1, 2, 3]).with_timezone("UTC"),
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Nanosecond,
                 timezone: Some(String::from("UTC")),
@@ -1053,9 +1013,9 @@ mod timestamp_nanosecond_utc {
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
             Arc::new(
-                arrow::array::TimestampNanosecondArray::from(vec![None, None, Some(3), Some(4)])
+                arrow_array::TimestampNanosecondArray::from(vec![None, None, Some(3), Some(4)])
                     .with_timezone("UTC"),
-            ) as arrow::array::ArrayRef,
+            ) as arrow_array::ArrayRef,
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Nanosecond,
                 timezone: Some(String::from("UTC")),
@@ -1072,7 +1032,7 @@ mod utf8 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::StringArray>(vec!["foo", "bar", "baz", "hello", "world"]),
+            as_array_ref::<arrow_array::StringArray>(vec!["foo", "bar", "baz", "hello", "world"]),
             Array::Utf8(BytesArray {
                 validity: None,
                 offsets: vec![0, 3, 6, 9, 14, 19],
@@ -1084,7 +1044,7 @@ mod utf8 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::StringArray>(vec![
+            as_array_ref::<arrow_array::StringArray>(vec![
                 Some("foo"),
                 Some("bar"),
                 None,
@@ -1106,7 +1066,7 @@ mod large_utf8 {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::LargeStringArray>(vec![
+            as_array_ref::<arrow_array::LargeStringArray>(vec![
                 "foo", "bar", "baz", "hello", "world",
             ]),
             Array::LargeUtf8(BytesArray {
@@ -1120,7 +1080,7 @@ mod large_utf8 {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::LargeStringArray>(vec![
+            as_array_ref::<arrow_array::LargeStringArray>(vec![
                 Some("foo"),
                 Some("bar"),
                 None,
@@ -1142,7 +1102,7 @@ mod binary {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::BinaryArray>(vec![
+            as_array_ref::<arrow_array::BinaryArray>(vec![
                 b"foo" as &[u8],
                 b"bar",
                 b"baz",
@@ -1160,7 +1120,7 @@ mod binary {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::BinaryArray>(vec![
+            as_array_ref::<arrow_array::BinaryArray>(vec![
                 Some(b"foo" as &[u8]),
                 Some(b"bar"),
                 None,
@@ -1182,7 +1142,7 @@ mod large_binary {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::LargeBinaryArray>(vec![
+            as_array_ref::<arrow_array::LargeBinaryArray>(vec![
                 b"foo" as &[u8],
                 b"bar",
                 b"baz",
@@ -1200,7 +1160,7 @@ mod large_binary {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::LargeBinaryArray>(vec![
+            as_array_ref::<arrow_array::LargeBinaryArray>(vec![
                 Some(b"foo" as &[u8]),
                 Some(b"bar"),
                 None,
@@ -1222,7 +1182,7 @@ mod fixed_size_binary {
     #[test]
     fn not_nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::FixedSizeBinaryArray>(vec![
+            as_array_ref::<arrow_array::FixedSizeBinaryArray>(vec![
                 b"foo" as &[u8],
                 b"bar",
                 b"baz",
@@ -1238,7 +1198,7 @@ mod fixed_size_binary {
     #[test]
     fn nullable() -> PanicOnError<()> {
         assert_arrays_eq(
-            as_array_ref::<arrow::array::FixedSizeBinaryArray>(vec![
+            as_array_ref::<arrow_array::FixedSizeBinaryArray>(vec![
                 Some(b"foo" as &[u8]),
                 Some(b"bar"),
                 None,
@@ -1256,9 +1216,15 @@ mod fixed_size_binary {
 mod list {
     use super::*;
 
-    use arrow::array::{ArrayRef, Int32Builder, ListBuilder};
+    use arrow_array::{
+        builder::{Int32Builder, ListBuilder},
+        ArrayRef,
+    };
 
-    // example from the arrow docs
+    // Copied from the arrow docs
+    //
+    // License: Apache Software License 2.0
+    // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/generic_list_builder.rs#L218
     fn example() -> ArrayRef {
         let mut builder = ListBuilder::new(Int32Builder::new());
 
@@ -1294,9 +1260,15 @@ mod list {
 mod large_list {
     use super::*;
 
-    use arrow::array::{ArrayRef, Int32Builder, LargeListBuilder};
+    use arrow_array::{
+        builder::{Int32Builder, LargeListBuilder},
+        ArrayRef,
+    };
 
-    /// example from the arrow docs
+    // Copied from the arrow docs
+    //
+    // License: Apache Software License 2.0
+    // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/generic_list_builder.rs#L218
     fn example() -> ArrayRef {
         let mut builder = LargeListBuilder::new(Int32Builder::new());
 
@@ -1332,9 +1304,15 @@ mod large_list {
 mod fixed_size_list {
     use super::*;
 
-    use arrow::array::{ArrayRef, FixedSizeListBuilder, Int32Builder};
+    use arrow_array::{
+        builder::{FixedSizeListBuilder, Int32Builder},
+        ArrayRef,
+    };
 
-    // example from the arrow docs
+    // Copied from the arrow docs
+    //
+    // License: Apache Software License 2.0
+    // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/fixed_size_list_builder.rs#L27
     fn example() -> ArrayRef {
         let mut builder = FixedSizeListBuilder::new(Int32Builder::new(), 3);
 
@@ -1384,13 +1362,18 @@ mod fixed_size_list {
 mod map {
     use super::*;
 
-    // example from the arrow docs
-    fn example_array() -> PanicOnError<arrow::array::ArrayRef> {
-        let string_builder = arrow::array::StringBuilder::new();
-        let int_builder = arrow::array::Int32Builder::new();
+    use arrow_array::builder::{Int32Builder, MapBuilder, StringBuilder};
+
+    // Copied from the arrow docs
+    //
+    // License: Apache Software License 2.0
+    // Source: https://github.com/apache/arrow-rs/blob/065c7b8f94264eeb6a1ca23a92795fc4e0d31d51/arrow-array/src/builder/map_builder.rs#L30
+    fn example_array() -> PanicOnError<arrow_array::ArrayRef> {
+        let string_builder = StringBuilder::new();
+        let int_builder = Int32Builder::new();
 
         // Construct `[{"joe": 1}, {"blogs": 2, "foo": 4}, {}, null]`
-        let mut builder = arrow::array::MapBuilder::new(None, string_builder, int_builder);
+        let mut builder = MapBuilder::new(None, string_builder, int_builder);
 
         builder.keys().append_value("joe");
         builder.values().append_value(1);
@@ -1404,17 +1387,13 @@ mod map {
         builder.append(true).unwrap();
         builder.append(false).unwrap();
 
-        Ok(Arc::new(builder.finish()) as arrow::array::ArrayRef)
+        Ok(Arc::new(builder.finish()) as arrow_array::ArrayRef)
     }
 
     #[test]
     fn example() -> PanicOnError<()> {
-        let array_via_arrow = example_array()?;
-
-        // assert_eq!(array.data_type(), &arrow::datatypes::DataType::Null);
-
         assert_arrays_eq(
-            array_via_arrow,
+            example_array()?,
             Array::Map(MapArray {
                 meta: MapMeta::default(),
                 validity: Some(vec![0b_0111]),
@@ -1428,85 +1407,6 @@ mod map {
                     validity: None,
                     values: vec![1, 2, 4],
                 })),
-            }),
-        )
-    }
-}
-
-mod dense_union_array {
-    use super::*;
-
-    use arrow::array::{ArrayRef, Float64Array, Int32Array, UnionArray};
-
-    // example from arrow docs
-    fn example_array() -> PanicOnError<ArrayRef> {
-        let int_array = Int32Array::from(vec![1, 34]);
-        let float_array = Float64Array::from(vec![3.2]);
-        let type_ids = vec![0_i8, 1, 0];
-        let offsets = vec![0, 0, 1];
-
-        let union_fields = vec![
-            (
-                0_i8,
-                Arc::new(arrow::datatypes::Field::new(
-                    "A",
-                    arrow::datatypes::DataType::Int32,
-                    false,
-                )),
-            ),
-            (
-                1_i8,
-                Arc::new(arrow::datatypes::Field::new(
-                    "B",
-                    arrow::datatypes::DataType::Float64,
-                    false,
-                )),
-            ),
-        ];
-
-        let children = vec![Arc::new(int_array) as ArrayRef, Arc::new(float_array)];
-
-        let array = UnionArray::try_new(
-            union_fields.into_iter().collect(),
-            type_ids.into(),
-            Some(offsets.into()),
-            children,
-        )?;
-
-        Ok(Arc::new(array) as ArrayRef)
-    }
-
-    #[test]
-    fn example() -> PanicOnError<()> {
-        assert_arrays_eq(
-            example_array()?,
-            Array::DenseUnion(DenseUnionArray {
-                types: vec![0, 1, 0],
-                offsets: vec![0, 0, 1],
-                fields: vec![
-                    (
-                        0,
-                        FieldMeta {
-                            name: String::from("A"),
-                            ..Default::default()
-                        },
-                        Array::Int32(PrimitiveArray {
-                            validity: None,
-                            values: vec![1, 34],
-                        }),
-                    ),
-                    (
-                        1,
-                        FieldMeta {
-                            name: String::from("B"),
-                            ..Default::default()
-                        },
-                        Array::Float64(PrimitiveArray {
-                            validity: None,
-                            values: vec![3.2],
-                        }),
-                    ),
-                ],
             }),
         )
     }
