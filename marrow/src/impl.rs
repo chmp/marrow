@@ -1,6 +1,8 @@
 //! Internal do not use
 //!
-//! This module exports helpers for use in doc tests
+//! This module exports helpers for use in doc tests. This setup is a workaround for the fact that
+//! there is no way to expose functionality only in doc tests. See [this
+//! issue](https://github.com/rust-lang/rust/issues/67295).
 #[macro_export]
 #[doc(hidden)]
 macro_rules! _with_arrow {
