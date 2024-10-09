@@ -16,6 +16,7 @@ macro_rules! define_test_module {
     };
 }
 
+// arrow-version:insert: define_test_module!("arrow-{version}", arrow_{version}, arrow_array_{version}, arrow_schema_{version}, utils, arrays, data_types, union_arrays);
 define_test_module!("arrow-53", arrow_53, arrow_array_53, arrow_schema_53, utils, arrays, data_types, union_arrays);
 define_test_module!("arrow-52", arrow_52, arrow_array_52, arrow_schema_52, utils, arrays, data_types, union_arrays);
 define_test_module!("arrow-51", arrow_51, arrow_array_51, arrow_schema_51, utils, arrays, data_types);
