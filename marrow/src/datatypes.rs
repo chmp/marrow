@@ -91,9 +91,9 @@ pub struct MapMeta {
     pub entries_name: String,
     /// Whether the maps are sorted (defaults to `false`)
     pub sorted: bool,
-    /// The metadata of the keys array (defaults to a non-nullable field with name "keys")
+    /// The metadata of the keys array (defaults to a non-nullable field with name `"keys"`)
     pub keys: FieldMeta,
-    /// The metadata of the values array (defaults to a nullable field with name "values")
+    /// The metadata of the values array (defaults to a nullable field with name `"values"`)
     pub values: FieldMeta,
 }
 
