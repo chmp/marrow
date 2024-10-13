@@ -2,12 +2,12 @@ use std::borrow::Cow;
 
 use crate::{
     array::{Array, PrimitiveArray},
-    datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
+    datatypes::{meta_from_field, DataType, Field, FieldMeta, IntervalUnit, TimeUnit, UnionMode},
     error::{fail, ErrorKind, MarrowError, Result},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
-        StructView, TimeView, TimestampView, View,
+        SparseUnionView, StructView, TimeView, TimestampView, View,
     },
 };
 
@@ -45,6 +45,7 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
             AT::Time32(unit) => Ok(T::Time32((*unit).try_into()?)),
             AT::Time64(unit) => Ok(T::Time64((*unit).try_into()?)),
             AT::Duration(unit) => Ok(T::Duration((*unit).try_into()?)),
+            AT::Interval(unit) => Ok(T::Interval((*unit).try_into()?)),
             AT::Timestamp(unit, tz) => Ok(T::Timestamp((*unit).try_into()?, tz.clone())),
             AT::Decimal(precision, scale) => {
                 if *precision > u8::MAX as usize || *scale > i8::MAX as usize {
@@ -157,6 +158,7 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
             T::Date32 => Ok(AT::Date32),
             T::Date64 => Ok(AT::Date64),
             T::Duration(unit) => Ok(AT::Duration((*unit).try_into()?)),
+            T::Interval(unit) => Ok(AT::Interval((*unit).try_into()?)),
             T::Time32(unit) => Ok(AT::Time32((*unit).try_into()?)),
             T::Time64(unit) => Ok(AT::Time64((*unit).try_into()?)),
             T::Timestamp(unit, tz) => Ok(AT::Timestamp((*unit).try_into()?, tz.clone())),
@@ -314,6 +316,32 @@ impl TryFrom<UnionMode> for arrow2::datatypes::UnionMode {
     }
 }
 
+/// Conversion from `arrow2` interval units modes (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<arrow2::datatypes::IntervalUnit> for IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow2::datatypes::IntervalUnit) -> Result<Self> {
+        match value {
+            arrow2::datatypes::IntervalUnit::YearMonth => Ok(IntervalUnit::YearMonth),
+            arrow2::datatypes::IntervalUnit::DayTime => Ok(IntervalUnit::DayTime),
+            arrow2::datatypes::IntervalUnit::MonthDayNano => Ok(IntervalUnit::MonthDayNano),
+        }
+    }
+}
+
+/// Conversion to `arrow2` interval units modes (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<IntervalUnit> for arrow2::datatypes::IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: IntervalUnit) -> Result<Self> {
+        match value {
+            IntervalUnit::YearMonth => Ok(arrow2::datatypes::IntervalUnit::YearMonth),
+            IntervalUnit::DayTime => Ok(arrow2::datatypes::IntervalUnit::DayTime),
+            IntervalUnit::MonthDayNano => Ok(arrow2::datatypes::IntervalUnit::MonthDayNano),
+        }
+    }
+}
+
 /// Conversion to `arrow2` arrays (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
     type Error = MarrowError;
@@ -445,24 +473,21 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 )))
             }
             A::DenseUnion(arr) => {
-                let mut values = Vec::new();
-                let mut fields = Vec::new();
-                let mut type_ids = Vec::new();
-
-                for (type_id, meta, child) in arr.fields {
-                    let child: Box<dyn arrow2::array::Array> = child.try_into()?;
-                    let field = field_from_array_and_meta(child.as_ref(), meta);
-
-                    type_ids.push(type_id.into());
-                    values.push(child);
-                    fields.push(field);
-                }
-
+                let (type_ids, fields, values) = convert_union_fields(arr.fields)?;
                 Ok(Box::new(arrow2::array::UnionArray::try_new(
                     AT::Union(fields, Some(type_ids), arrow2::datatypes::UnionMode::Dense),
                     arr.types.into(),
                     values,
                     Some(arr.offsets.into()),
+                )?))
+            }
+            A::SparseUnion(arr) => {
+                let (type_ids, fields, values) = convert_union_fields(arr.fields)?;
+                Ok(Box::new(arrow2::array::UnionArray::try_new(
+                    AT::Union(fields, Some(type_ids), arrow2::datatypes::UnionMode::Sparse),
+                    arr.types.into(),
+                    values,
+                    None,
                 )?))
             }
             A::FixedSizeList(arr) => {
@@ -492,6 +517,29 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
             }
         }
     }
+}
+
+fn convert_union_fields(
+    union_fields: Vec<(i8, FieldMeta, Array)>,
+) -> Result<(
+    Vec<i32>,
+    Vec<arrow2::datatypes::Field>,
+    Vec<Box<dyn arrow2::array::Array>>,
+)> {
+    let mut values = Vec::new();
+    let mut fields = Vec::new();
+    let mut type_ids = Vec::new();
+
+    for (type_id, meta, child) in union_fields {
+        let child: Box<dyn arrow2::array::Array> = child.try_into()?;
+        let field = field_from_array_and_meta(child.as_ref(), meta);
+
+        type_ids.push(type_id.into());
+        values.push(child);
+        fields.push(field);
+    }
+
+    Ok((type_ids, fields, values))
 }
 
 fn build_primitive_array<T: arrow2::types::NativeType>(
@@ -794,9 +842,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 array.offsets().as_slice(),
             )?))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::UnionArray>() {
-            let AT::Union(union_fields, type_ids, arrow2::datatypes::UnionMode::Dense) =
-                array.data_type()
-            else {
+            let AT::Union(union_fields, type_ids, mode) = array.data_type() else {
                 fail!(
                     ErrorKind::Unsupported,
                     "Invalid data type: only dense unions are supported"
@@ -814,12 +860,6 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             };
 
             let types = array.types().as_slice();
-            let Some(offsets) = array.offsets() else {
-                fail!(
-                    ErrorKind::Unsupported,
-                    "DenseUnion array without offsets are not supported"
-                );
-            };
 
             let mut fields = Vec::new();
             for ((type_id, child), child_field) in
@@ -832,11 +872,31 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 ));
             }
 
-            Ok(V::DenseUnion(DenseUnionView {
-                types,
-                offsets: offsets.as_slice(),
-                fields,
-            }))
+            match mode {
+                arrow2::datatypes::UnionMode::Dense => {
+                    let Some(offsets) = array.offsets() else {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "DenseUnion array without offsets are not supported"
+                        );
+                    };
+
+                    Ok(V::DenseUnion(DenseUnionView {
+                        types,
+                        offsets: offsets.as_slice(),
+                        fields,
+                    }))
+                }
+                arrow2::datatypes::UnionMode::Sparse => {
+                    if array.offsets().is_some() {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "SparseUnion array with offsets are not supported"
+                        );
+                    };
+                    Ok(V::SparseUnion(SparseUnionView { types, fields }))
+                }
+            }
         } else if let Some(array) = any.downcast_ref::<arrow2::array::FixedSizeListArray>() {
             let AT::FixedSizeList(field, _) = array.data_type() else {
                 fail!(

@@ -84,6 +84,8 @@ pub enum View<'a> {
     Map(MapView<'a>),
     /// See [`Array::DenseUnion`][crate::array::Array::DenseUnion]
     DenseUnion(DenseUnionView<'a>),
+    /// See [`Array::SparseUnion`][crate::array::Array::SparseUnion]
+    SparseUnion(SparseUnionView<'a>),
 }
 
 /// A bitmap with an optional offset
@@ -286,5 +288,14 @@ pub struct DenseUnionView<'a> {
     /// See [`DenseUnionArray::offsets`][crate::array::DenseUnionArray::offsets]
     pub offsets: &'a [i32],
     /// See [`DenseUnionArray::fields`][crate::array::DenseUnionArray::fields]
+    pub fields: Vec<(i8, FieldMeta, View<'a>)>,
+}
+
+/// See [`SparseUnionArray`][crate::array::SparseUnionArray]
+#[derive(Debug, Clone, PartialEq)]
+pub struct SparseUnionView<'a> {
+    /// See [`SparseUnionArray::types`][crate::array::SparseUnionArray::types]
+    pub types: &'a [i8],
+    /// See [`SparseUnionArray::fields`][crate::array::SparseUnionArray::fields]
     pub fields: Vec<(i8, FieldMeta, View<'a>)>,
 }

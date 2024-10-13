@@ -177,6 +177,8 @@ pub enum DataType {
     Time64(TimeUnit),
     /// Durations stored as `i64` with the given unit
     Duration(TimeUnit),
+    /// Calendar intervals with different layouts depending on the given unit
+    Interval(IntervalUnit),
     /// Fixed point values stored with the given precision and scale
     Decimal128(u8, i8),
     /// Structs
@@ -280,7 +282,7 @@ impl std::fmt::Display for UnionMode {
 impl std::str::FromStr for UnionMode {
     type Err = MarrowError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         match s {
             "Sparse" => Ok(UnionMode::Sparse),
             "Dense" => Ok(UnionMode::Dense),
@@ -305,4 +307,58 @@ fn union_mode_as_str() {
 
     assert_variant!(Dense);
     assert_variant!(Sparse);
+}
+
+/// The unit of calendar intervals
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum IntervalUnit {
+    /// An interval as the number of months, stored as `i32`
+    YearMonth,
+    /// An interval as the number of days, stored as `i32`, and milliseconds, stored as `i32`
+    DayTime,
+    /// An interval as the number of months (stored as `i32`), days (stored as `i32`) and nanoseconds (stored as `i64`)
+    MonthDayNano,
+}
+
+impl std::fmt::Display for IntervalUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::YearMonth => write!(f, "YearMonth"),
+            Self::DayTime => write!(f, "DayTime"),
+            Self::MonthDayNano => write!(f, "MonthDayNano"),
+        }
+    }
+}
+
+impl std::str::FromStr for IntervalUnit {
+    type Err = MarrowError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "YearMonth" => Ok(Self::YearMonth),
+            "DayTime" => Ok(Self::DayTime),
+            "MonthDayNano" => Ok(Self::MonthDayNano),
+            s => fail!(ErrorKind::ParseError, "Invalid IntervalUnit: {s}"),
+        }
+    }
+}
+
+#[test]
+fn interval_unit() {
+    use std::str::FromStr;
+
+    macro_rules! assert_variant {
+        ($variant:ident) => {
+            assert_eq!((IntervalUnit::$variant).to_string(), stringify!($variant));
+            assert_eq!(
+                IntervalUnit::from_str(stringify!($variant)).unwrap(),
+                IntervalUnit::$variant
+            );
+        };
+    }
+
+    assert_variant!(YearMonth);
+    assert_variant!(DayTime);
+    assert_variant!(MonthDayNano);
 }

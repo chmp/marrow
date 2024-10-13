@@ -7,7 +7,7 @@ use crate::{
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
-        StructView, TimeView, TimestampView, View,
+        SparseUnionView, StructView, TimeView, TimestampView, View,
     },
 };
 
@@ -83,8 +83,10 @@ pub enum Array {
     Dictionary(DictionaryArray),
     /// An array of maps
     Map(MapArray),
-    /// An array of unions
+    /// An array of unions with compact memory layout
     DenseUnion(DenseUnionArray),
+    /// An array of unions
+    SparseUnion(SparseUnionArray),
 }
 
 impl Array {
@@ -123,6 +125,7 @@ impl Array {
             Self::Map(array) => View::Map(array.as_view()),
             Self::Dictionary(array) => View::Dictionary(array.as_view()),
             Self::DenseUnion(array) => View::DenseUnion(array.as_view()),
+            Self::SparseUnion(array) => View::SparseUnion(array.as_view()),
         }
     }
 }
@@ -498,7 +501,7 @@ impl DictionaryArray {
     }
 }
 
-/// A union of different data types
+/// A union of different data types with a compact representation
 ///
 /// This corresponds roughly to Rust's enums. Each element has a type, which indicates the
 /// underlying array to use. For fast lookups the offsets into the underlying arrays are stored as
@@ -515,10 +518,35 @@ pub struct DenseUnionArray {
 }
 
 impl DenseUnionArray {
-    fn as_view(&self) -> DenseUnionView<'_> {
+    /// Get the view for this array
+    pub fn as_view(&self) -> DenseUnionView<'_> {
         DenseUnionView {
             types: &self.types,
             offsets: &self.offsets,
+            fields: self
+                .fields
+                .iter()
+                .map(|(type_id, meta, array)| (*type_id, meta.clone(), array.as_view()))
+                .collect(),
+        }
+    }
+}
+
+/// A union of different data types with a less compact representation
+///
+#[derive(Debug, Clone, PartialEq)]
+pub struct SparseUnionArray {
+    /// The types of each element
+    pub types: Vec<i8>,
+    /// The arrays with their metadata
+    pub fields: Vec<(i8, FieldMeta, Array)>,
+}
+
+impl SparseUnionArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> SparseUnionView<'_> {
+        SparseUnionView {
+            types: &self.types,
             fields: self
                 .fields
                 .iter()
