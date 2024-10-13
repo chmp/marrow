@@ -115,7 +115,7 @@ def _update_json_file(path, content):
 
 def _workflow_check_steps():
     return [
-        {"name": "system", "run": "uname - a"},
+        {"name": "system", "run": "uname -a"},
         {"name": "rustc", "run": "rustc --version"},
         {"name": "cargo", "run": "cargo --version"},
         {
