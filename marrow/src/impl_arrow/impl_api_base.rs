@@ -547,6 +547,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn union_fields_into_fields_and_data(
     union_fields: Vec<(i8, FieldMeta, Array)>,
 ) -> Result<(

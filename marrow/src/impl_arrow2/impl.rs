@@ -523,6 +523,7 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn convert_union_fields(
     union_fields: Vec<(i8, FieldMeta, Array)>,
 ) -> Result<(
