@@ -752,6 +752,166 @@ mod duration_nanosecond {
     }
 }
 
+mod interval_year_month {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalYearMonthArray>(vec![1, 2, 3]),
+            Array::YearMonthInterval(PrimitiveArray {
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalYearMonthArray>(vec![Some(1), None, Some(3)]),
+            Array::YearMonthInterval(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![1, 0, 3],
+            }),
+        )
+    }
+}
+
+mod internval_day_time {
+    use super::*;
+
+    use marrow::types::DayTimeInterval;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalDayTimeArray>(vec![
+                arrow_array::types::IntervalDayTimeType::make_value(1, 2),
+                arrow_array::types::IntervalDayTimeType::make_value(3, 4),
+                arrow_array::types::IntervalDayTimeType::make_value(5, 6),
+            ]),
+            Array::DayTimeInterval(PrimitiveArray {
+                validity: None,
+                values: vec![
+                    DayTimeInterval {
+                        days: 1,
+                        milliseconds: 2,
+                    },
+                    DayTimeInterval {
+                        days: 3,
+                        milliseconds: 4,
+                    },
+                    DayTimeInterval {
+                        days: 5,
+                        milliseconds: 6,
+                    },
+                ],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalDayTimeArray>(vec![
+                Some(arrow_array::types::IntervalDayTimeType::make_value(1, 2)),
+                None,
+                Some(arrow_array::types::IntervalDayTimeType::make_value(5, 6)),
+            ]),
+            Array::DayTimeInterval(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![
+                    DayTimeInterval {
+                        days: 1,
+                        milliseconds: 2,
+                    },
+                    DayTimeInterval {
+                        days: 0,
+                        milliseconds: 0,
+                    },
+                    DayTimeInterval {
+                        days: 5,
+                        milliseconds: 6,
+                    },
+                ],
+            }),
+        )
+    }
+}
+
+mod interval_month_day_nano {
+    use super::*;
+
+    use marrow::types::MonthDayNanoInterval;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalMonthDayNanoArray>(vec![
+                arrow_array::types::IntervalMonthDayNanoType::make_value(1, 2, 3),
+                arrow_array::types::IntervalMonthDayNanoType::make_value(4, 5, 6),
+                arrow_array::types::IntervalMonthDayNanoType::make_value(7, 8, 9),
+            ]),
+            Array::MonthDayNanoInterval(PrimitiveArray {
+                validity: None,
+                values: vec![
+                    MonthDayNanoInterval {
+                        months: 1,
+                        days: 2,
+                        nanoseconds: 3,
+                    },
+                    MonthDayNanoInterval {
+                        months: 4,
+                        days: 5,
+                        nanoseconds: 6,
+                    },
+                    MonthDayNanoInterval {
+                        months: 7,
+                        days: 8,
+                        nanoseconds: 9,
+                    },
+                ],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalMonthDayNanoArray>(vec![
+                Some(arrow_array::types::IntervalMonthDayNanoType::make_value(
+                    1, 2, 3,
+                )),
+                None,
+                Some(arrow_array::types::IntervalMonthDayNanoType::make_value(
+                    7, 8, 9,
+                )),
+            ]),
+            Array::MonthDayNanoInterval(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![
+                    MonthDayNanoInterval {
+                        months: 1,
+                        days: 2,
+                        nanoseconds: 3,
+                    },
+                    MonthDayNanoInterval {
+                        months: 0,
+                        days: 0,
+                        nanoseconds: 0,
+                    },
+                    MonthDayNanoInterval {
+                        months: 7,
+                        days: 8,
+                        nanoseconds: 9,
+                    },
+                ],
+            }),
+        )
+    }
+}
+
 mod timestamp_second {
     use super::*;
 

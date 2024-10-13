@@ -163,3 +163,20 @@ impl From<std::num::TryFromIntError> for MarrowError {
         )
     }
 }
+
+impl From<bytemuck::PodCastError> for MarrowError {
+    fn from(err: bytemuck::PodCastError) -> Self {
+        let err = match err {
+            bytemuck::PodCastError::TargetAlignmentGreaterAndInputNotAligned => {
+                "TargetAlignmentGreaterAndInputNotAligned"
+            }
+            bytemuck::PodCastError::OutputSliceWouldHaveSlop => "OutputSliceWouldHaveSlop",
+            bytemuck::PodCastError::SizeMismatch => "SizeMismatch",
+            bytemuck::PodCastError::AlignmentMismatch => "AlignmentMismatch",
+        };
+        MarrowError::new(
+            ErrorKind::Unsupported,
+            format!("bytemuck::PodCastError: {err}"),
+        )
+    }
+}

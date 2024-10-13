@@ -353,6 +353,26 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             arr.validity,
             arr.values,
         ),
+        A::YearMonthInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::YearMonth),
+            arr.validity,
+            arr.values,
+        ),
+        A::DayTimeInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::DayTime),
+            arr.validity,
+            // NOTE: bytemuck::allocation::try_cast_vec enforces exact alignment. This cannot be
+            // guaranteed between different arrow version (arrow < 52 used i64, arrow >= 52 has its
+            // own type with different alignment). Therefore covert the vector elementwise and
+            // create a new vector.
+            try_cast_vec::<_, i64>(arr.values)?,
+        ),
+        A::MonthDayNanoInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::MonthDayNano),
+            arr.validity,
+            // See note for A::DayTimeInterval
+            try_cast_vec::<_, i128>(arr.values)?,
+        ),
         A::Decimal128(arr) => primitive_into_data(
             arrow_schema::DataType::Decimal128(arr.precision, arr.scale),
             arr.validity,
@@ -725,6 +745,26 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 validity: get_bits_with_offset(array),
                 values: array.values(),
             }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalYearMonthArray>() {
+            Ok(View::YearMonthInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                values: array.values(),
+            }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalDayTimeArray>() {
+            Ok(View::DayTimeInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                // bytemuck checks the dynamically. This check always succeeds if the the target
+                // alignment is smaller or equal to the source alignment. This is the case here, as
+                // structs are aligned to their largest field (which is at most 64 bits) and arrow
+                // aligns to 64 bits.
+                values: bytemuck::try_cast_slice(array.values().inner().as_slice())?,
+            }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalMonthDayNanoArray>() {
+            Ok(View::MonthDayNanoInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                // See note for DayTimeInterval
+                values: bytemuck::try_cast_slice(array.values().inner().as_slice())?,
+            }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::StringArray>() {
             Ok(View::Utf8(BytesView {
                 validity: get_bits_with_offset(array),
@@ -986,4 +1026,12 @@ fn get_bits_with_offset(array: &dyn arrow_array::Array) -> Option<BitsWithOffset
         offset: validity.offset(),
         data: validity.validity(),
     })
+}
+
+fn try_cast_vec<A: bytemuck::NoUninit, B: bytemuck::AnyBitPattern>(a: Vec<A>) -> Result<Vec<B>> {
+    let mut res = Vec::new();
+    for item in a {
+        res.push(bytemuck::try_cast(item)?);
+    }
+    Ok(res)
 }

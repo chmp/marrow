@@ -4,6 +4,7 @@ use half::f16;
 use crate::{
     datatypes::{FieldMeta, MapMeta, TimeUnit},
     error::{fail, ErrorKind, Result},
+    types::{DayTimeInterval, MonthDayNanoInterval},
     view::{
         BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
         FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
@@ -59,6 +60,18 @@ pub enum Array {
     Timestamp(TimestampArray),
     /// An `i64` array of durations
     Duration(TimeArray<i64>),
+    /// Interval with `YearMonth` unit
+    ///
+    /// Interval arrays are not supported for `arrow2`.
+    YearMonthInterval(PrimitiveArray<i32>),
+    /// Interval with `DayTime` unit
+    ///
+    /// Interval arrays are not supported for `arrow2`.
+    DayTimeInterval(PrimitiveArray<DayTimeInterval>),
+    /// Interval with `MonthDayNano` unit
+    ///
+    /// Interval arrays are not supported for `arrow2`.
+    MonthDayNanoInterval(PrimitiveArray<MonthDayNanoInterval>),
     /// A `[u8]` array with `i32` offsets of strings
     Utf8(BytesArray<i32>),
     /// A `[u8]` array with `i64` offsets of strings
@@ -113,6 +126,9 @@ impl Array {
             Self::Time64(array) => View::Time64(array.as_view()),
             Self::Timestamp(array) => View::Timestamp(array.as_view()),
             Self::Duration(array) => View::Duration(array.as_view()),
+            Self::YearMonthInterval(array) => View::YearMonthInterval(array.as_view()),
+            Self::DayTimeInterval(array) => View::DayTimeInterval(array.as_view()),
+            Self::MonthDayNanoInterval(array) => View::MonthDayNanoInterval(array.as_view()),
             Self::Binary(array) => View::Binary(array.as_view()),
             Self::LargeBinary(array) => View::LargeBinary(array.as_view()),
             Self::FixedSizeBinary(array) => View::FixedSizeBinary(array.as_view()),

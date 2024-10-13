@@ -40,11 +40,13 @@ arrow-38 = ["dep:arrow-array-38", "dep:arrow-schema-38", "dep:arrow-data-38", "d
 arrow-37 = ["dep:arrow-array-37", "dep:arrow-schema-37", "dep:arrow-data-37", "dep:arrow-buffer-37"]
 
 # support for different arrow2 versions
-arrow2-0-17 = ["dep:arrow2-0-17", "dep:bytemuck", "half/bytemuck"]
-arrow2-0-16 = ["dep:arrow2-0-16", "dep:bytemuck", "half/bytemuck"]
+arrow2-0-17 = ["dep:arrow2-0-17", "half/bytemuck"]
+arrow2-0-16 = ["dep:arrow2-0-16", "half/bytemuck"]
 
 [dependencies]
+bytemuck = { version = "1", default-features = false, features = ["derive"] }
 half = { version = "2", default-features = false }
+
 serde = { version = "1.0", default-features = false, features = ["std", "derive"], optional = true }
 
 # arrow-version:insert: arrow-array-{version} = {{ package = "arrow-array", version = "{version}", optional = true, default-features = false }}
@@ -125,5 +127,3 @@ arrow-schema-37 = { package = "arrow-schema", version = "37", optional = true, d
 
 arrow2-0-17 = { package = "arrow2", version = "0.17", optional = true, default-features = false }
 arrow2-0-16 = { package = "arrow2", version = "0.16", optional = true, default-features = false }
-
-bytemuck = { version = "1", optional = true, default-features = false }

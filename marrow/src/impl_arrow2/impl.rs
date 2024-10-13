@@ -515,6 +515,10 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                     validity,
                 )?))
             }
+            A::YearMonthInterval(_) | A::DayTimeInterval(_) | A::MonthDayNanoInterval(_) => fail!(
+                ErrorKind::Unsupported,
+                "Interval arrays are not supported for arrow2"
+            ),
         }
     }
 }

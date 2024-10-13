@@ -6,6 +6,7 @@ use half::f16;
 use crate::{
     datatypes::{FieldMeta, MapMeta, TimeUnit},
     error::{fail, ErrorKind, Result},
+    types::{DayTimeInterval, MonthDayNanoInterval},
 };
 
 // assert that the `Array` implements the expected traits
@@ -58,6 +59,12 @@ pub enum View<'a> {
     Timestamp(TimestampView<'a>),
     /// See [`Array::Duration`][crate::array::Array::Duration]
     Duration(TimeView<'a, i64>),
+    /// See [`Array::YearMonthInterval`][crate::array::Array::YearMonthInterval]
+    YearMonthInterval(PrimitiveView<'a, i32>),
+    /// See [`Array::DayTimeInterval`][crate::array::Array::DayTimeInterval]
+    DayTimeInterval(PrimitiveView<'a, DayTimeInterval>),
+    /// See [`Array::MonthDayNanoInterval`][crate::array::Array::MonthDayNanoInterval]
+    MonthDayNanoInterval(PrimitiveView<'a, MonthDayNanoInterval>),
     /// See [`Array::Utf8`][crate::array::Array::Utf8]
     Utf8(BytesView<'a, i32>),
     /// See [`Array::LargeUtf8`][crate::array::Array::LargeUtf8]
