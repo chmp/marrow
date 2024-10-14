@@ -5,12 +5,15 @@ use half::f16;
 
 use crate::{
     array::Array,
-    datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
+    datatypes::{
+        meta_from_field, DataType, Field, FieldMeta, IntervalUnit, RunEndEncodedMeta, TimeUnit,
+        UnionMode,
+    },
     error::{fail, ErrorKind, MarrowError, Result},
     view::{
-        BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeListView, ListView, MapView, NullView, PrimitiveView, StructView, TimeView,
-        TimestampView, View,
+        BitsWithOffset, BooleanView, BytesView, DecimalView, DictionaryView, FixedSizeListView,
+        ListView, MapView, NullView, PrimitiveView, RunEndEncodedView, StructView, TimeView,
+        TimestampView, UnionView, View,
     },
 };
 
@@ -54,6 +57,7 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 tz.as_ref().map(|s| s.to_string()),
             )),
             AT::Duration(unit) => Ok(T::Duration(unit.clone().try_into()?)),
+            AT::Interval(unit) => Ok(T::Interval(unit.clone().try_into()?)),
             AT::Binary => Ok(T::Binary),
             AT::LargeBinary => Ok(T::LargeBinary),
             AT::FixedSizeBinary(n) => Ok(T::FixedSizeBinary(*n)),
@@ -73,7 +77,6 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
             AT::Dictionary(key, value) => Ok(T::Dictionary(
                 T::try_from(key.as_ref())?.into(),
                 T::try_from(value.as_ref())?.into(),
-                false,
             )),
             AT::Union(in_fields, mode) => {
                 let mut fields = Vec::new();
@@ -82,6 +85,10 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 }
                 Ok(T::Union(fields, (*mode).try_into()?))
             }
+            AT::RunEndEncoded(keys, values) => Ok(T::RunEndEncoded(
+                Box::new(keys.as_ref().try_into()?),
+                Box::new(values.as_ref().try_into()?),
+            )),
             data_type => fail!(
                 ErrorKind::Unsupported,
                 "Unsupported arrow data type {data_type}"
@@ -136,6 +143,7 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
                 tz.as_ref().map(|s| s.to_string().into()),
             )),
             T::Duration(unit) => Ok(AT::Duration((*unit).try_into()?)),
+            T::Interval(unit) => Ok(AT::Interval((*unit).try_into()?)),
             T::Binary => Ok(AT::Binary),
             T::LargeBinary => Ok(AT::LargeBinary),
             T::FixedSizeBinary(n) => Ok(AT::FixedSizeBinary(*n)),
@@ -152,9 +160,13 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
                 }
                 Ok(AT::Struct(fields.into()))
             }
-            T::Dictionary(key, value, _sorted) => Ok(AT::Dictionary(
+            T::Dictionary(key, value) => Ok(AT::Dictionary(
                 AT::try_from(key.as_ref())?.into(),
                 AT::try_from(value.as_ref())?.into(),
+            )),
+            T::RunEndEncoded(indices, values) => Ok(AT::RunEndEncoded(
+                AF::try_from(indices.as_ref())?.into(),
+                AF::try_from(values.as_ref())?.into(),
             )),
             T::Union(in_fields, mode) => {
                 let mut fields = Vec::new();
@@ -234,12 +246,38 @@ impl TryFrom<UnionMode> for arrow_schema::UnionMode {
     }
 }
 
-/// Converison to `arrow` arrays (*requires one of the `arrow-{version}` features*)
+/// Conversion to `arrow` arrays (*requires one of the `arrow-{version}` features*)
 impl TryFrom<Array> for Arc<dyn arrow_array::Array> {
     type Error = MarrowError;
 
     fn try_from(value: Array) -> Result<Arc<dyn arrow_array::Array>> {
         Ok(arrow_array::make_array(build_array_data(value)?))
+    }
+}
+
+/// Conversion from `arrow` interval units (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<arrow_schema::IntervalUnit> for IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow_schema::IntervalUnit) -> Result<Self> {
+        match value {
+            arrow_schema::IntervalUnit::YearMonth => Ok(IntervalUnit::YearMonth),
+            arrow_schema::IntervalUnit::DayTime => Ok(IntervalUnit::DayTime),
+            arrow_schema::IntervalUnit::MonthDayNano => Ok(IntervalUnit::MonthDayNano),
+        }
+    }
+}
+
+/// Conversion to `arrow` interval units (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<IntervalUnit> for arrow_schema::IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: IntervalUnit) -> Result<Self> {
+        match value {
+            IntervalUnit::YearMonth => Ok(arrow_schema::IntervalUnit::YearMonth),
+            IntervalUnit::DayTime => Ok(arrow_schema::IntervalUnit::DayTime),
+            IntervalUnit::MonthDayNano => Ok(arrow_schema::IntervalUnit::MonthDayNano),
+        }
     }
 }
 
@@ -324,6 +362,26 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             arrow_schema::DataType::Duration(arr.unit.try_into()?),
             arr.validity,
             arr.values,
+        ),
+        A::YearMonthInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::YearMonth),
+            arr.validity,
+            arr.values,
+        ),
+        A::DayTimeInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::DayTime),
+            arr.validity,
+            // NOTE: bytemuck::allocation::try_cast_vec enforces exact alignment. This cannot be
+            // guaranteed between different arrow version (arrow < 52 used i64, arrow >= 52 has its
+            // own type with different alignment). Therefore covert the vector elementwise and
+            // create a new vector.
+            try_cast_vec::<_, i64>(arr.values)?,
+        ),
+        A::MonthDayNanoInterval(arr) => primitive_into_data(
+            arrow_schema::DataType::Interval(arrow_schema::IntervalUnit::MonthDayNano),
+            arr.validity,
+            // See note for A::DayTimeInterval
+            try_cast_vec::<_, i128>(arr.values)?,
         ),
         A::Decimal128(arr) => primitive_into_data(
             arrow_schema::DataType::Decimal128(arr.precision, arr.scale),
@@ -432,18 +490,43 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
             )?)
         }
         A::Dictionary(arr) => {
-            let indices = build_array_data(*arr.indices)?;
+            let keys = build_array_data(*arr.keys)?;
             let values = build_array_data(*arr.values)?;
             let data_type = arrow_schema::DataType::Dictionary(
-                Box::new(indices.data_type().clone()),
+                Box::new(keys.data_type().clone()),
                 Box::new(values.data_type().clone()),
             );
 
-            Ok(indices
+            Ok(keys
                 .into_builder()
                 .data_type(data_type)
                 .child_data(vec![values])
                 .build()?)
+        }
+        A::RunEndEncoded(arr) => {
+            let len = get_ree_len_from_indices(&arr.run_ends)?;
+            let run_ends = build_array_data(*arr.run_ends)?;
+            let values = build_array_data(*arr.values)?;
+            let data_type = arrow_schema::DataType::RunEndEncoded(
+                field_from_data_and_meta(
+                    &run_ends,
+                    FieldMeta {
+                        name: arr.meta.run_ends_name,
+                        ..FieldMeta::default()
+                    },
+                )
+                .into(),
+                field_from_data_and_meta(&values, arr.meta.values).into(),
+            );
+
+            Ok(arrow_data::ArrayData::try_new(
+                data_type,
+                len,
+                None,
+                0,
+                vec![],
+                vec![run_ends, values],
+            )?)
         }
         A::Map(arr) => {
             let (entries, entries_name, sorted, validity, offsets) = arr.into_logical_array()?;
@@ -465,34 +548,69 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
                 vec![entries],
             )?)
         }
-        A::DenseUnion(arr) => {
-            let mut fields = Vec::new();
-            let mut child_data = Vec::new();
+        A::Union(arr) => {
+            let (fields, child_data) = union_fields_into_fields_and_data(arr.fields)?;
+            let len = arr.types.len();
+            let mut buffers = vec![arrow_buffer::ScalarBuffer::from(arr.types).into_inner()];
+            let mode;
 
-            for (type_id, meta, array) in arr.fields {
-                let child = build_array_data(array)?;
-                let field = field_from_data_and_meta(&child, meta);
-
-                fields.push((type_id, Arc::new(field)));
-                child_data.push(child);
+            if let Some(offsets) = arr.offsets {
+                buffers.push(arrow_buffer::ScalarBuffer::from(offsets).into_inner());
+                mode = arrow_schema::UnionMode::Dense;
+            } else {
+                mode = arrow_schema::UnionMode::Sparse;
             }
 
             Ok(arrow_data::ArrayData::try_new(
-                arrow_schema::DataType::Union(
-                    fields.into_iter().collect(),
-                    arrow_schema::UnionMode::Dense,
-                ),
-                arr.types.len(),
+                arrow_schema::DataType::Union(fields.into_iter().collect(), mode),
+                len,
                 None,
                 0,
-                vec![
-                    arrow_buffer::ScalarBuffer::from(arr.types).into_inner(),
-                    arrow_buffer::ScalarBuffer::from(arr.offsets).into_inner(),
-                ],
+                buffers,
                 child_data,
             )?)
         }
     }
+}
+
+fn get_ree_len_from_indices(indices: &Array) -> Result<usize> {
+    let cand = match indices {
+        Array::Int16(array) => array.values.last().copied().map(usize::try_from),
+        Array::Int32(array) => array.values.last().copied().map(usize::try_from),
+        Array::Int64(array) => array.values.last().copied().map(usize::try_from),
+        // TODO: include data type
+        _ => fail!(
+            ErrorKind::Unsupported,
+            "unsupported run ends in RunEndEncoded"
+        ),
+    };
+
+    match cand {
+        Some(Ok(len)) => Ok(len),
+        Some(Err(err)) => Err(err.into()),
+        None => Ok(0),
+    }
+}
+
+#[allow(clippy::type_complexity)]
+fn union_fields_into_fields_and_data(
+    union_fields: Vec<(i8, FieldMeta, Array)>,
+) -> Result<(
+    Vec<(i8, arrow_schema::FieldRef)>,
+    Vec<arrow_data::ArrayData>,
+)> {
+    let mut fields = Vec::new();
+    let mut child_data = Vec::new();
+
+    for (type_id, meta, array) in union_fields {
+        let child = build_array_data(array)?;
+        let field = field_from_data_and_meta(&child, meta);
+
+        fields.push((type_id, Arc::new(field)));
+        child_data.push(child);
+    }
+
+    Ok((fields, child_data))
 }
 
 /// Converison from `arrow` arrays (*requires one of the `arrow-{version}` features*)
@@ -673,6 +791,26 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 validity: get_bits_with_offset(array),
                 values: array.values(),
             }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalYearMonthArray>() {
+            Ok(View::YearMonthInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                values: array.values(),
+            }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalDayTimeArray>() {
+            Ok(View::DayTimeInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                // bytemuck checks the dynamically. This check always succeeds if the the target
+                // alignment is smaller or equal to the source alignment. This is the case here, as
+                // structs are aligned to their largest field (which is at most 64 bits) and arrow
+                // aligns to 64 bits.
+                values: bytemuck::try_cast_slice(array.values().inner().as_slice())?,
+            }))
+        } else if let Some(array) = any.downcast_ref::<arrow_array::IntervalMonthDayNanoArray>() {
+            Ok(View::MonthDayNanoInterval(PrimitiveView {
+                validity: get_bits_with_offset(array),
+                // See note for DayTimeInterval
+                values: bytemuck::try_cast_slice(array.values().inner().as_slice())?,
+            }))
         } else if let Some(array) = any.downcast_ref::<arrow_array::StringArray>() {
             Ok(View::Utf8(BytesView {
                 validity: get_bits_with_offset(array),
@@ -798,16 +936,35 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
             wrap_dictionary_array::<arrow_array::types::Int32Type>(array)
         } else if let Some(array) = any.downcast_ref::<arrow_array::Int64DictionaryArray>() {
             wrap_dictionary_array::<arrow_array::types::Int64Type>(array)
+        } else if let Some(run_array) =
+            any.downcast_ref::<arrow_array::RunArray<arrow_array::types::Int16Type>>()
+        {
+            wrap_ree_array::<arrow_array::types::Int16Type, _>(
+                View::Int16,
+                array.data_type(),
+                run_array,
+            )
+        } else if let Some(run_array) =
+            any.downcast_ref::<arrow_array::RunArray<arrow_array::types::Int32Type>>()
+        {
+            wrap_ree_array::<arrow_array::types::Int32Type, _>(
+                View::Int32,
+                array.data_type(),
+                run_array,
+            )
+        } else if let Some(run_array) =
+            any.downcast_ref::<arrow_array::RunArray<arrow_array::types::Int64Type>>()
+        {
+            wrap_ree_array::<arrow_array::types::Int64Type, _>(
+                View::Int64,
+                array.data_type(),
+                run_array,
+            )
         } else if let Some(array) = any.downcast_ref::<arrow_array::UnionArray>() {
             use arrow_array::Array;
 
-            let arrow_schema::DataType::Union(union_fields, arrow_schema::UnionMode::Dense) =
-                array.data_type()
-            else {
-                fail!(
-                    ErrorKind::Unsupported,
-                    "Invalid data type: only dense unions are supported"
-                );
+            let arrow_schema::DataType::Union(union_fields, mode) = array.data_type() else {
+                fail!(ErrorKind::Unsupported, "Invalid data type for UnionArray");
             };
 
             let mut fields = Vec::new();
@@ -816,14 +973,28 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 let view: View = array.child(type_id).as_ref().try_into()?;
                 fields.push((type_id, meta, view));
             }
-            let Some(offsets) = array.offsets() else {
-                fail!(
-                    ErrorKind::Unsupported,
-                    "Dense unions must have an offset array"
-                );
-            };
 
-            Ok(View::DenseUnion(DenseUnionView {
+            let offsets = match mode {
+                arrow_schema::UnionMode::Dense => {
+                    let Some(offsets) = array.offsets() else {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "Dense unions must have an offset array"
+                        );
+                    };
+                    Some(offsets as &[i32])
+                }
+                arrow_schema::UnionMode::Sparse => {
+                    if array.offsets().is_some() {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "Sparse unions must not have an offset array"
+                        );
+                    };
+                    None
+                }
+            };
+            Ok(View::Union(UnionView {
                 types: array.type_ids(),
                 offsets,
                 fields,
@@ -910,8 +1081,47 @@ fn wrap_dictionary_array<K: arrow_array::types::ArrowDictionaryKeyType>(
     let keys: &dyn arrow_array::Array = array.keys();
 
     Ok(View::Dictionary(DictionaryView {
-        indices: Box::new(keys.try_into()?),
+        keys: Box::new(keys.try_into()?),
         values: Box::new(array.values().as_ref().try_into()?),
+    }))
+}
+
+fn wrap_ree_array<'a, T, F>(
+    wrap: F,
+    dt: &arrow_schema::DataType,
+    array: &'a arrow_array::RunArray<T>,
+) -> Result<View<'a>>
+where
+    T: arrow_array::types::RunEndIndexType,
+    F: FnOnce(PrimitiveView<'a, <T as arrow_array::ArrowPrimitiveType>::Native>) -> View<'a>,
+{
+    let arrow_schema::DataType::RunEndEncoded(run_ends_field, values_field) = dt else {
+        fail!(
+            ErrorKind::Unsupported,
+            "Invalid data type for run end encoded array"
+        );
+    };
+
+    if run_ends_field.is_nullable() {
+        fail!(
+            ErrorKind::Unsupported,
+            "Nullable run ends are not supported"
+        );
+    }
+
+    let run_ends = wrap(PrimitiveView {
+        validity: None,
+        values: array.run_ends().values(),
+    });
+    let values = View::try_from(array.values().as_ref())?;
+
+    Ok(View::RunEndEncoded(RunEndEncodedView {
+        meta: RunEndEncodedMeta {
+            run_ends_name: run_ends_field.name().clone(),
+            values: meta_from_field(values_field.as_ref().try_into()?),
+        },
+        run_ends: Box::new(run_ends),
+        values: Box::new(values),
     }))
 }
 
@@ -921,4 +1131,12 @@ fn get_bits_with_offset(array: &dyn arrow_array::Array) -> Option<BitsWithOffset
         offset: validity.offset(),
         data: validity.validity(),
     })
+}
+
+fn try_cast_vec<A: bytemuck::NoUninit, B: bytemuck::AnyBitPattern>(a: Vec<A>) -> Result<Vec<B>> {
+    let mut res = Vec::new();
+    for item in a {
+        res.push(bytemuck::try_cast(item)?);
+    }
+    Ok(res)
 }

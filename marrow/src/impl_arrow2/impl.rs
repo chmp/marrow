@@ -2,12 +2,12 @@ use std::borrow::Cow;
 
 use crate::{
     array::{Array, PrimitiveArray},
-    datatypes::{meta_from_field, DataType, Field, FieldMeta, TimeUnit, UnionMode},
+    datatypes::{meta_from_field, DataType, Field, FieldMeta, IntervalUnit, TimeUnit, UnionMode},
     error::{fail, ErrorKind, MarrowError, Result},
     view::{
-        BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
-        StructView, TimeView, TimestampView, View,
+        BitsWithOffset, BooleanView, BytesView, DecimalView, DictionaryView, FixedSizeBinaryView,
+        FixedSizeListView, ListView, MapView, NullView, PrimitiveView, StructView, TimeView,
+        TimestampView, UnionView, View,
     },
 };
 
@@ -45,6 +45,7 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
             AT::Time32(unit) => Ok(T::Time32((*unit).try_into()?)),
             AT::Time64(unit) => Ok(T::Time64((*unit).try_into()?)),
             AT::Duration(unit) => Ok(T::Duration((*unit).try_into()?)),
+            AT::Interval(unit) => Ok(T::Interval((*unit).try_into()?)),
             AT::Timestamp(unit, tz) => Ok(T::Timestamp((*unit).try_into()?, tz.clone())),
             AT::Decimal(precision, scale) => {
                 if *precision > u8::MAX as usize || *scale > i8::MAX as usize {
@@ -74,7 +75,7 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
                 }
                 Ok(T::Struct(res_fields))
             }
-            AT::Dictionary(key, value, sorted) => {
+            AT::Dictionary(key, value, _) => {
                 let key = match key {
                     I::Int8 => T::Int8,
                     I::Int16 => T::Int16,
@@ -88,7 +89,6 @@ impl TryFrom<&arrow2::datatypes::DataType> for DataType {
                 Ok(T::Dictionary(
                     Box::new(key),
                     Box::new(value.as_ref().try_into()?),
-                    *sorted,
                 ))
             }
             AT::Union(in_fields, in_type_ids, mode) => {
@@ -157,6 +157,7 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
             T::Date32 => Ok(AT::Date32),
             T::Date64 => Ok(AT::Date64),
             T::Duration(unit) => Ok(AT::Duration((*unit).try_into()?)),
+            T::Interval(unit) => Ok(AT::Interval((*unit).try_into()?)),
             T::Time32(unit) => Ok(AT::Time32((*unit).try_into()?)),
             T::Time64(unit) => Ok(AT::Time64((*unit).try_into()?)),
             T::Timestamp(unit, tz) => Ok(AT::Timestamp((*unit).try_into()?, tz.clone())),
@@ -174,52 +175,56 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
             T::FixedSizeBinary(n) => Ok(AT::FixedSizeBinary((*n).try_into()?)),
             T::Utf8 => Ok(AT::Utf8),
             T::LargeUtf8 => Ok(AT::LargeUtf8),
-            T::Dictionary(key, value, sorted) => match key.as_ref() {
+            T::Dictionary(key, value) => match key.as_ref() {
                 T::Int8 => Ok(AT::Dictionary(
                     I::Int8,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::Int16 => Ok(AT::Dictionary(
                     I::Int16,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::Int32 => Ok(AT::Dictionary(
                     I::Int32,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::Int64 => Ok(AT::Dictionary(
                     I::Int64,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::UInt8 => Ok(AT::Dictionary(
                     I::UInt8,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::UInt16 => Ok(AT::Dictionary(
                     I::UInt16,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::UInt32 => Ok(AT::Dictionary(
                     I::UInt32,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 T::UInt64 => Ok(AT::Dictionary(
                     I::UInt64,
                     AT::try_from(value.as_ref())?.into(),
-                    *sorted,
+                    false,
                 )),
                 dt => fail!(
                     ErrorKind::Unsupported,
                     "unsupported dictionary key type {dt:?}",
                 ),
             },
+            T::RunEndEncoded(_, _) => fail!(
+                ErrorKind::Unsupported,
+                "RunEndEncoded is not supported by arrow2"
+            ),
             T::List(field) => Ok(AT::List(AF::try_from(field.as_ref())?.into())),
             T::LargeList(field) => Ok(AT::LargeList(AF::try_from(field.as_ref())?.into())),
             T::FixedSizeList(field, n) => Ok(AT::FixedSizeList(
@@ -314,6 +319,32 @@ impl TryFrom<UnionMode> for arrow2::datatypes::UnionMode {
     }
 }
 
+/// Conversion from `arrow2` interval units modes (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<arrow2::datatypes::IntervalUnit> for IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: arrow2::datatypes::IntervalUnit) -> Result<Self> {
+        match value {
+            arrow2::datatypes::IntervalUnit::YearMonth => Ok(IntervalUnit::YearMonth),
+            arrow2::datatypes::IntervalUnit::DayTime => Ok(IntervalUnit::DayTime),
+            arrow2::datatypes::IntervalUnit::MonthDayNano => Ok(IntervalUnit::MonthDayNano),
+        }
+    }
+}
+
+/// Conversion to `arrow2` interval units modes (*requires one of the `arrow2-{version}` features*)
+impl TryFrom<IntervalUnit> for arrow2::datatypes::IntervalUnit {
+    type Error = MarrowError;
+
+    fn try_from(value: IntervalUnit) -> Result<Self> {
+        match value {
+            IntervalUnit::YearMonth => Ok(arrow2::datatypes::IntervalUnit::YearMonth),
+            IntervalUnit::DayTime => Ok(arrow2::datatypes::IntervalUnit::DayTime),
+            IntervalUnit::MonthDayNano => Ok(arrow2::datatypes::IntervalUnit::MonthDayNano),
+        }
+    }
+}
+
 /// Conversion to `arrow2` arrays (*requires one of the `arrow2-{version}` features*)
 impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
     type Error = MarrowError;
@@ -375,21 +406,25 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
             A::LargeBinary(arr) => {
                 build_binary_array(AT::LargeBinary, arr.offsets, arr.data, arr.validity)
             }
-            A::Dictionary(arr) => match *arr.indices {
-                A::Int8(indices) => build_dictionary_array(AI::Int8, indices, *arr.values),
-                A::Int16(indices) => build_dictionary_array(AI::Int16, indices, *arr.values),
-                A::Int32(indices) => build_dictionary_array(AI::Int32, indices, *arr.values),
-                A::Int64(indices) => build_dictionary_array(AI::Int64, indices, *arr.values),
-                A::UInt8(indices) => build_dictionary_array(AI::UInt8, indices, *arr.values),
-                A::UInt16(indices) => build_dictionary_array(AI::UInt16, indices, *arr.values),
-                A::UInt32(indices) => build_dictionary_array(AI::UInt32, indices, *arr.values),
-                A::UInt64(indices) => build_dictionary_array(AI::UInt64, indices, *arr.values),
+            A::Dictionary(arr) => match *arr.keys {
+                A::Int8(keys) => build_dictionary_array(AI::Int8, keys, *arr.values),
+                A::Int16(keys) => build_dictionary_array(AI::Int16, keys, *arr.values),
+                A::Int32(keys) => build_dictionary_array(AI::Int32, keys, *arr.values),
+                A::Int64(keys) => build_dictionary_array(AI::Int64, keys, *arr.values),
+                A::UInt8(keys) => build_dictionary_array(AI::UInt8, keys, *arr.values),
+                A::UInt16(keys) => build_dictionary_array(AI::UInt16, keys, *arr.values),
+                A::UInt32(keys) => build_dictionary_array(AI::UInt32, keys, *arr.values),
+                A::UInt64(keys) => build_dictionary_array(AI::UInt64, keys, *arr.values),
                 // TODO: improve error message by including the data type
                 _ => fail!(
                     ErrorKind::Unsupported,
-                    "unsupported dictionary index array during arrow2 conversion"
+                    "Unsupported dictionary index array during arrow2 conversion"
                 ),
             },
+            A::RunEndEncoded(_) => fail!(
+                ErrorKind::Unsupported,
+                "RunEndEncoded is not supported by arrow2"
+            ),
             A::List(arr) => build_list_array(
                 AT::List,
                 arr.offsets,
@@ -444,25 +479,18 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                     validity,
                 )))
             }
-            A::DenseUnion(arr) => {
-                let mut values = Vec::new();
-                let mut fields = Vec::new();
-                let mut type_ids = Vec::new();
-
-                for (type_id, meta, child) in arr.fields {
-                    let child: Box<dyn arrow2::array::Array> = child.try_into()?;
-                    let field = field_from_array_and_meta(child.as_ref(), meta);
-
-                    type_ids.push(type_id.into());
-                    values.push(child);
-                    fields.push(field);
-                }
-
+            A::Union(arr) => {
+                let (type_ids, fields, values) = convert_union_fields(arr.fields)?;
+                let (offsets, mode) = if let Some(offsets) = arr.offsets {
+                    (Some(offsets.into()), arrow2::datatypes::UnionMode::Dense)
+                } else {
+                    (None, arrow2::datatypes::UnionMode::Sparse)
+                };
                 Ok(Box::new(arrow2::array::UnionArray::try_new(
-                    AT::Union(fields, Some(type_ids), arrow2::datatypes::UnionMode::Dense),
+                    AT::Union(fields, Some(type_ids), mode),
                     arr.types.into(),
                     values,
-                    Some(arr.offsets.into()),
+                    offsets,
                 )?))
             }
             A::FixedSizeList(arr) => {
@@ -490,8 +518,36 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                     validity,
                 )?))
             }
+            A::YearMonthInterval(_) | A::DayTimeInterval(_) | A::MonthDayNanoInterval(_) => fail!(
+                ErrorKind::Unsupported,
+                "Interval arrays are not supported for arrow2"
+            ),
         }
     }
+}
+
+#[allow(clippy::type_complexity)]
+fn convert_union_fields(
+    union_fields: Vec<(i8, FieldMeta, Array)>,
+) -> Result<(
+    Vec<i32>,
+    Vec<arrow2::datatypes::Field>,
+    Vec<Box<dyn arrow2::array::Array>>,
+)> {
+    let mut values = Vec::new();
+    let mut fields = Vec::new();
+    let mut type_ids = Vec::new();
+
+    for (type_id, meta, child) in union_fields {
+        let child: Box<dyn arrow2::array::Array> = child.try_into()?;
+        let field = field_from_array_and_meta(child.as_ref(), meta);
+
+        type_ids.push(type_id.into());
+        values.push(child);
+        fields.push(field);
+    }
+
+    Ok((type_ids, fields, values))
 }
 
 fn build_primitive_array<T: arrow2::types::NativeType>(
@@ -567,20 +623,19 @@ fn field_from_array_and_meta(
 }
 
 fn build_dictionary_array<K: arrow2::array::DictionaryKey>(
-    indices_type: arrow2::datatypes::IntegerType,
-    indices: PrimitiveArray<K>,
+    keys_type: arrow2::datatypes::IntegerType,
+    keys: PrimitiveArray<K>,
     values: Array,
 ) -> Result<Box<dyn arrow2::array::Array>> {
     let values: Box<dyn arrow2::array::Array> = values.try_into()?;
-    let validity = indices
+    let validity = keys
         .validity
-        .map(|v| arrow2::bitmap::Bitmap::from_u8_vec(v, indices.values.len()));
-    let keys =
-        arrow2::array::PrimitiveArray::new(indices_type.into(), indices.values.into(), validity);
+        .map(|v| arrow2::bitmap::Bitmap::from_u8_vec(v, keys.values.len()));
+    let keys = arrow2::array::PrimitiveArray::new(keys_type.into(), keys.values.into(), validity);
 
     Ok(Box::new(arrow2::array::DictionaryArray::try_new(
         arrow2::datatypes::DataType::Dictionary(
-            indices_type,
+            keys_type,
             Box::new(values.data_type().clone()),
             false,
         ),
@@ -794,9 +849,7 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 array.offsets().as_slice(),
             )?))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::UnionArray>() {
-            let AT::Union(union_fields, type_ids, arrow2::datatypes::UnionMode::Dense) =
-                array.data_type()
-            else {
+            let AT::Union(union_fields, type_ids, mode) = array.data_type() else {
                 fail!(
                     ErrorKind::Unsupported,
                     "Invalid data type: only dense unions are supported"
@@ -814,12 +867,6 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
             };
 
             let types = array.types().as_slice();
-            let Some(offsets) = array.offsets() else {
-                fail!(
-                    ErrorKind::Unsupported,
-                    "DenseUnion array without offsets are not supported"
-                );
-            };
 
             let mut fields = Vec::new();
             for ((type_id, child), child_field) in
@@ -832,9 +879,29 @@ impl<'a> TryFrom<&'a dyn arrow2::array::Array> for View<'a> {
                 ));
             }
 
-            Ok(V::DenseUnion(DenseUnionView {
+            let offsets = match mode {
+                arrow2::datatypes::UnionMode::Dense => {
+                    let Some(offsets) = array.offsets() else {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "DenseUnion array without offsets are not supported"
+                        );
+                    };
+                    Some(offsets.as_slice())
+                }
+                arrow2::datatypes::UnionMode::Sparse => {
+                    if array.offsets().is_some() {
+                        fail!(
+                            ErrorKind::Unsupported,
+                            "SparseUnion array with offsets are not supported"
+                        );
+                    };
+                    None
+                }
+            };
+            Ok(V::Union(UnionView {
                 types,
-                offsets: offsets.as_slice(),
+                offsets,
                 fields,
             }))
         } else if let Some(array) = any.downcast_ref::<arrow2::array::FixedSizeListArray>() {
@@ -898,7 +965,7 @@ fn view_dictionary_array<
     array: &'a arrow2::array::DictionaryArray<K>,
 ) -> Result<DictionaryView<'a>> {
     Ok(DictionaryView {
-        indices: Box::new(index_type(view_primitive_array(array.keys()))),
+        keys: Box::new(index_type(view_primitive_array(array.keys()))),
         values: Box::new(array.values().as_ref().try_into()?),
     })
 }

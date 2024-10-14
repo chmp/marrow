@@ -50,8 +50,6 @@ workflow_test_template = lambda: {
             "runs-on": "ubuntu-latest",
             "steps": [
                 {"uses": "actions/checkout@v4"},
-                {"name": "rustc", "run": "rustc --version"},
-                {"name": "cargo", "run": "cargo --version"},
                 *_workflow_check_steps(),
             ],
         }
@@ -72,8 +70,6 @@ workflow_release_template = lambda: {
             },
             "steps": [
                 {"uses": "actions/checkout@v4"},
-                {"name": "rustc", "run": "rustc --version"},
-                {"name": "cargo", "run": "cargo --version"},
                 *_workflow_check_steps(),
                 {
                     "name": "Publish to crates.io",
@@ -119,6 +115,9 @@ def _update_json_file(path, content):
 
 def _workflow_check_steps():
     return [
+        {"name": "system", "run": "uname -a"},
+        {"name": "rustc", "run": "rustc --version"},
+        {"name": "cargo", "run": "cargo --version"},
         {
             "name": "Check format",
             "run": "cargo fmt --check",

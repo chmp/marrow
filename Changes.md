@@ -2,10 +2,22 @@
 
 ## 0.2.0
 
+Breaking changes:
+
 - Rework map arrays to use explicit keys and values array to simplify interaction the underlying
   arrays
-- Rework `StructArray` and `DenseUnionArray`: place metadata in front of arrays in
-  `StructArray::fields`, `DenseUnionArray::fields`
+- Rename `DenseUnion` to `Union` and change offsets to be `Option<Vec<i32>>`, implement sparse
+  unions
+- Rename `Dictionary::indices` to `Dictionary::keys`
+- Remove the sorted flag from the dictionary `DataType` it is not supported by `arrow`
+- Rework `StructArray` and `UnionArray`: place metadata in front of arrays in `StructArray::fields`,
+  `UnionArray::fields`
+
+New features
+
+- Add `Interval` arrays and the `Interval` data type
+- Add `RunEndEncoded` arrays
+- Add `Array::data_type()` and  `View::data_type()`
 - Add `MarrowError::new` and `MarrowError::with_cause`
 - Add `as_view` for `Array` and the array structs
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`

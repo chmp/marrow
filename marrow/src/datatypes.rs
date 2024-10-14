@@ -9,11 +9,13 @@ const _: () = {
     impl AssertExpectedTraits for DataType {}
 };
 
-// assert that the `Field` and `FieldMeta` implement the expected traits
+// assert that the `Field`, `FieldMeta`, etc. implement the expected traits
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + Default + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for Field {}
     impl AssertExpectedTraits for FieldMeta {}
+    impl AssertExpectedTraits for MapMeta {}
+    impl AssertExpectedTraits for RunEndEncodedMeta {}
 };
 
 /// The data type and metadata of a field
@@ -58,6 +60,15 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
         name: field.name,
         nullable: field.nullable,
         metadata: field.metadata,
+    }
+}
+
+pub(crate) fn field_from_meta(data_type: DataType, meta: FieldMeta) -> Field {
+    Field {
+        data_type,
+        name: meta.name,
+        nullable: meta.nullable,
+        metadata: meta.metadata,
     }
 }
 
@@ -107,6 +118,44 @@ impl std::default::Default for MapMeta {
                 nullable: false,
                 metadata: HashMap::new(),
             },
+            values: FieldMeta {
+                name: String::from("values"),
+                nullable: true,
+                metadata: HashMap::new(),
+            },
+        }
+    }
+}
+
+/// Metadata for run end encoded arrays
+///
+/// ```rust
+/// # use marrow::datatypes::{FieldMeta, RunEndEncodedMeta};
+/// assert_eq!(
+///     RunEndEncodedMeta::default(),
+///     RunEndEncodedMeta {
+///         run_ends_name: String::from("run_ends"),
+///         values: FieldMeta {
+///             name: String::from("values"),
+///             nullable: true,
+///             ..FieldMeta::default()
+///         },
+///     },
+/// );
+/// ```
+///
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RunEndEncodedMeta {
+    /// The name for the run ends (defaults to `"run_ends"`)
+    pub run_ends_name: String,
+    /// The metadata for the values array (defaults to a nullable with with name `"values"`)
+    pub values: FieldMeta,
+}
+
+impl std::default::Default for RunEndEncodedMeta {
+    fn default() -> Self {
+        RunEndEncodedMeta {
+            run_ends_name: String::from("run_ends"),
             values: FieldMeta {
                 name: String::from("values"),
                 nullable: true,
@@ -177,6 +226,8 @@ pub enum DataType {
     Time64(TimeUnit),
     /// Durations stored as `i64` with the given unit
     Duration(TimeUnit),
+    /// Calendar intervals with different layouts depending on the given unit
+    Interval(IntervalUnit),
     /// Fixed point values stored with the given precision and scale
     Decimal128(u8, i8),
     /// Structs
@@ -190,7 +241,13 @@ pub enum DataType {
     /// Maps
     Map(Box<Field>, bool),
     /// Deduplicated values
-    Dictionary(Box<DataType>, Box<DataType>, bool),
+    ///
+    /// The children are `Dictionary(indices, values)`
+    Dictionary(Box<DataType>, Box<DataType>),
+    /// Deduplicated values that continuously repeat
+    ///
+    /// The children are `RunEndEncoded(indices, values)`
+    RunEndEncoded(Box<Field>, Box<Field>),
     /// Union o different types
     Union(Vec<(i8, Field)>, UnionMode),
 }
@@ -280,7 +337,7 @@ impl std::fmt::Display for UnionMode {
 impl std::str::FromStr for UnionMode {
     type Err = MarrowError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self> {
         match s {
             "Sparse" => Ok(UnionMode::Sparse),
             "Dense" => Ok(UnionMode::Dense),
@@ -305,4 +362,58 @@ fn union_mode_as_str() {
 
     assert_variant!(Dense);
     assert_variant!(Sparse);
+}
+
+/// The unit of calendar intervals
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum IntervalUnit {
+    /// An interval as the number of months, stored as `i32`
+    YearMonth,
+    /// An interval as the number of days, stored as `i32`, and milliseconds, stored as `i32`
+    DayTime,
+    /// An interval as the number of months (stored as `i32`), days (stored as `i32`) and nanoseconds (stored as `i64`)
+    MonthDayNano,
+}
+
+impl std::fmt::Display for IntervalUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::YearMonth => write!(f, "YearMonth"),
+            Self::DayTime => write!(f, "DayTime"),
+            Self::MonthDayNano => write!(f, "MonthDayNano"),
+        }
+    }
+}
+
+impl std::str::FromStr for IntervalUnit {
+    type Err = MarrowError;
+
+    fn from_str(s: &str) -> Result<Self> {
+        match s {
+            "YearMonth" => Ok(Self::YearMonth),
+            "DayTime" => Ok(Self::DayTime),
+            "MonthDayNano" => Ok(Self::MonthDayNano),
+            s => fail!(ErrorKind::ParseError, "Invalid IntervalUnit: {s}"),
+        }
+    }
+}
+
+#[test]
+fn interval_unit() {
+    use std::str::FromStr;
+
+    macro_rules! assert_variant {
+        ($variant:ident) => {
+            assert_eq!((IntervalUnit::$variant).to_string(), stringify!($variant));
+            assert_eq!(
+                IntervalUnit::from_str(stringify!($variant)).unwrap(),
+                IntervalUnit::$variant
+            );
+        };
+    }
+
+    assert_variant!(YearMonth);
+    assert_variant!(DayTime);
+    assert_variant!(MonthDayNano);
 }

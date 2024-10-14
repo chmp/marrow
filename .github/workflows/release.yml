@@ -21,6 +21,10 @@
           "uses": "actions/checkout@v4"
         },
         {
+          "name": "system",
+          "run": "uname -a"
+        },
+        {
           "name": "rustc",
           "run": "rustc --version"
         },

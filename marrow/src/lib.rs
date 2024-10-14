@@ -128,6 +128,8 @@ pub mod datatypes;
 #[deny(missing_docs)]
 pub mod error;
 #[deny(missing_docs)]
+pub mod types;
+#[deny(missing_docs)]
 pub mod view;
 
 mod impl_arrow;

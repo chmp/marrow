@@ -752,6 +752,32 @@ mod duration_nanosecond {
     }
 }
 
+mod interval_year_month {
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalYearMonthArray>(vec![1, 2, 3]),
+            Array::YearMonthInterval(PrimitiveArray {
+                validity: None,
+                values: vec![1, 2, 3],
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            as_array_ref::<arrow_array::IntervalYearMonthArray>(vec![Some(1), None, Some(3)]),
+            Array::YearMonthInterval(PrimitiveArray {
+                validity: Some(vec![0b_101]),
+                values: vec![1, 0, 3],
+            }),
+        )
+    }
+}
+
 mod timestamp_second {
     use super::*;
 
@@ -1478,7 +1504,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int8(PrimitiveArray {
+                keys: Box::new(Array::Int8(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1502,7 +1528,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int8(PrimitiveArray {
+                keys: Box::new(Array::Int8(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1522,7 +1548,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int16(PrimitiveArray {
+                keys: Box::new(Array::Int16(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1546,7 +1572,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int16(PrimitiveArray {
+                keys: Box::new(Array::Int16(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1566,7 +1592,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int32(PrimitiveArray {
+                keys: Box::new(Array::Int32(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1590,7 +1616,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int32(PrimitiveArray {
+                keys: Box::new(Array::Int32(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1610,7 +1636,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int64(PrimitiveArray {
+                keys: Box::new(Array::Int64(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1634,7 +1660,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::Int64(PrimitiveArray {
+                keys: Box::new(Array::Int64(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1654,7 +1680,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt8(PrimitiveArray {
+                keys: Box::new(Array::UInt8(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1678,7 +1704,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt8(PrimitiveArray {
+                keys: Box::new(Array::UInt8(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1698,7 +1724,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt16(PrimitiveArray {
+                keys: Box::new(Array::UInt16(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1722,7 +1748,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt16(PrimitiveArray {
+                keys: Box::new(Array::UInt16(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1742,7 +1768,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt32(PrimitiveArray {
+                keys: Box::new(Array::UInt32(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1766,7 +1792,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt32(PrimitiveArray {
+                keys: Box::new(Array::UInt32(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1786,7 +1812,7 @@ mod dictionary {
                 "a", "a", "b", "c", "c",
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt64(PrimitiveArray {
+                keys: Box::new(Array::UInt64(PrimitiveArray {
                     validity: None,
                     values: vec![0, 0, 1, 2, 2],
                 })),
@@ -1810,7 +1836,7 @@ mod dictionary {
                 Some("c"),
             ])?,
             Array::Dictionary(DictionaryArray {
-                indices: Box::new(Array::UInt64(PrimitiveArray {
+                keys: Box::new(Array::UInt64(PrimitiveArray {
                     validity: Some(vec![0b_11001]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
@@ -1818,6 +1844,66 @@ mod dictionary {
                     validity: None,
                     offsets: vec![0, 1, 2],
                     data: b"ac".to_vec(),
+                })),
+            }),
+        )
+    }
+}
+
+mod run_end_encoded {
+    use marrow::{
+        array::{BytesArray, RunEndEncodedArray},
+        datatypes::RunEndEncodedMeta,
+    };
+
+    use super::*;
+
+    #[test]
+    fn not_nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow_array::RunArray::<arrow_array::types::Int32Type>::from_iter([
+                    "hello", "hello", "world", "foo",
+                ]),
+            ) as arrow_array::ArrayRef,
+            Array::RunEndEncoded(RunEndEncodedArray {
+                meta: RunEndEncodedMeta::default(),
+                run_ends: Box::new(Array::Int32(PrimitiveArray {
+                    validity: None,
+                    values: vec![2, 3, 4],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: None,
+                    offsets: vec![0, 5, 10, 13],
+                    data: b"helloworldfoo".to_vec(),
+                })),
+            }),
+        )
+    }
+
+    #[test]
+    fn nullable() -> PanicOnError<()> {
+        assert_arrays_eq(
+            Arc::new(
+                arrow_array::RunArray::<arrow_array::types::Int32Type>::from_iter([
+                    Some("hello"),
+                    Some("hello"),
+                    None,
+                    None,
+                    Some("world"),
+                    Some("foo"),
+                ]),
+            ) as arrow_array::ArrayRef,
+            Array::RunEndEncoded(RunEndEncodedArray {
+                meta: RunEndEncodedMeta::default(),
+                run_ends: Box::new(Array::Int32(PrimitiveArray {
+                    validity: None,
+                    values: vec![2, 4, 5, 6],
+                })),
+                values: Box::new(Array::Utf8(BytesArray {
+                    validity: Some(vec![0b1101]),
+                    offsets: vec![0, 5, 5, 10, 13],
+                    data: b"helloworldfoo".to_vec(),
                 })),
             }),
         )
