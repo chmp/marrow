@@ -1,6 +1,6 @@
 //! Arrays with borrowed data
 //!
-//! The views correspond 1:1 to the corresponding arrays.
+//! Each view corresponds 1:1 to an array.
 use half::f16;
 
 use crate::{
