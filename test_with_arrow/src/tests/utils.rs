@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use marrow::{array::Array, view::View};
+use marrow::{array::Array, datatypes::DataType, view::View};
 
 /// Helper to view an as the given variant
 macro_rules! view_as {
@@ -44,21 +44,39 @@ pub fn assert_arrays_eq(
     marrow_array: Array,
 ) -> PanicOnError<()> {
     let array_via_marrow = arrow_array::ArrayRef::try_from(marrow_array.clone())?;
+
+    assert_eq!(
+        DataType::try_from(array_via_arrow.data_type())?,
+        marrow_array.data_type(),
+        "marrow data type: arrow (left) != marrow (right)"
+    );
+    assert_eq!(
+        *array_via_arrow.data_type(),
+        arrow_schema::DataType::try_from(&marrow_array.data_type())?,
+        "arrow data type: arrow (left) != marrow (right)"
+    );
     assert_eq!(
         array_via_arrow.data_type(),
         array_via_marrow.data_type(),
-        "arrow (left) != marrow (right)"
+        "arrow data type: arrow (left) != marrow (right)"
     );
+
     assert_eq!(
         &array_via_arrow, &array_via_marrow,
-        "arrow (left) != marrow (right)"
+        "array: arrow (left) != marrow (right)"
     );
 
     let view_via_arrow = View::try_from(&*array_via_arrow)?;
     let view_via_marrow = marrow_array.as_view();
+
+    assert_eq!(
+        DataType::try_from(array_via_arrow.data_type())?,
+        view_via_marrow.data_type(),
+        "view data_type: arrow (left) != marrow (right)"
+    );
     assert_eq!(
         view_via_arrow, view_via_marrow,
-        "arrow (left) != marrow (right)"
+        "view: arrow (left) != marrow (right)"
     );
 
     Ok(())

@@ -2,13 +2,16 @@
 use half::f16;
 
 use crate::{
-    datatypes::{FieldMeta, MapMeta, TimeUnit},
+    datatypes::{
+        field_from_meta, DataType, Field, FieldMeta, IntervalUnit, MapMeta, RunEndEncodedMeta,
+        TimeUnit, UnionMode,
+    },
     error::{fail, ErrorKind, Result},
     types::{DayTimeInterval, MonthDayNanoInterval},
     view::{
-        BitsWithOffset, BooleanView, BytesView, DecimalView, DenseUnionView, DictionaryView,
-        FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
-        SparseUnionView, StructView, TimeView, TimestampView, View,
+        BitsWithOffset, BooleanView, BytesView, DecimalView, DictionaryView, FixedSizeBinaryView,
+        FixedSizeListView, ListView, MapView, NullView, PrimitiveView, RunEndEncodedView,
+        StructView, TimeView, TimestampView, UnionView, View,
     },
 };
 
@@ -94,15 +97,107 @@ pub enum Array {
     FixedSizeList(FixedSizeListArray),
     /// An array of dictionaries
     Dictionary(DictionaryArray),
+    /// An array of run end encoded values
+    RunEndEncoded(RunEndEncodedArray),
     /// An array of maps
     Map(MapArray),
-    /// An array of unions with compact memory layout
-    DenseUnion(DenseUnionArray),
     /// An array of unions
-    SparseUnion(SparseUnionArray),
+    Union(UnionArray),
 }
 
 impl Array {
+    /// Get the data type of this array
+    pub fn data_type(&self) -> DataType {
+        use DataType as T;
+        match self {
+            Self::Null(_) => T::Null,
+            Self::Boolean(_) => T::Boolean,
+            Self::Int8(_) => T::Int8,
+            Self::Int16(_) => T::Int16,
+            Self::Int32(_) => T::Int32,
+            Self::Int64(_) => T::Int64,
+            Self::UInt8(_) => T::UInt8,
+            Self::UInt16(_) => T::UInt16,
+            Self::UInt32(_) => T::UInt32,
+            Self::UInt64(_) => T::UInt64,
+            Self::Float16(_) => T::Float16,
+            Self::Float32(_) => T::Float32,
+            Self::Float64(_) => T::Float64,
+            Self::Decimal128(arr) => T::Decimal128(arr.precision, arr.scale),
+            Self::Date32(_) => T::Date32,
+            Self::Date64(_) => T::Date64,
+            Self::Time32(arr) => T::Time32(arr.unit),
+            Self::Time64(arr) => T::Time64(arr.unit),
+            Self::Timestamp(arr) => T::Timestamp(arr.unit, arr.timezone.clone()),
+            Self::Duration(arr) => T::Duration(arr.unit),
+            Self::DayTimeInterval(_) => T::Interval(IntervalUnit::DayTime),
+            Self::YearMonthInterval(_) => T::Interval(IntervalUnit::YearMonth),
+            Self::MonthDayNanoInterval(_) => T::Interval(IntervalUnit::MonthDayNano),
+            Self::Binary(_) => T::Binary,
+            Self::LargeBinary(_) => T::LargeBinary,
+            Self::FixedSizeBinary(arr) => T::FixedSizeBinary(arr.n),
+            Self::Utf8(_) => T::Utf8,
+            Self::LargeUtf8(_) => T::LargeUtf8,
+            Self::Dictionary(arr) => T::Dictionary(
+                Box::new(arr.keys.data_type()),
+                Box::new(arr.values.data_type()),
+            ),
+            Self::List(arr) => T::List(Box::new(field_from_meta(
+                arr.elements.data_type(),
+                arr.meta.clone(),
+            ))),
+            Self::LargeList(arr) => T::LargeList(Box::new(field_from_meta(
+                arr.elements.data_type(),
+                arr.meta.clone(),
+            ))),
+            Self::FixedSizeList(arr) => T::FixedSizeList(
+                Box::new(field_from_meta(arr.elements.data_type(), arr.meta.clone())),
+                arr.n,
+            ),
+            Self::Struct(arr) => T::Struct(
+                arr.fields
+                    .iter()
+                    .map(|(meta, field)| field_from_meta(field.data_type(), meta.clone()))
+                    .collect(),
+            ),
+            Self::Union(arr) => T::Union(
+                arr.fields
+                    .iter()
+                    .map(|(type_id, meta, field)| {
+                        (*type_id, field_from_meta(field.data_type(), meta.clone()))
+                    })
+                    .collect(),
+                match arr.offsets {
+                    Some(_) => UnionMode::Dense,
+                    None => UnionMode::Sparse,
+                },
+            ),
+            Self::Map(arr) => T::Map(
+                Box::new(Field {
+                    name: arr.meta.entries_name.clone(),
+                    data_type: DataType::Struct(vec![
+                        field_from_meta(arr.keys.data_type(), arr.meta.keys.clone()),
+                        field_from_meta(arr.values.data_type(), arr.meta.values.clone()),
+                    ]),
+                    ..Field::default()
+                }),
+                arr.meta.sorted,
+            ),
+            Self::RunEndEncoded(arr) => T::RunEndEncoded(
+                Box::new(Field {
+                    name: arr.meta.run_ends_name.clone(),
+                    data_type: arr.run_ends.data_type(),
+                    nullable: false,
+                    metadata: Default::default(),
+                }),
+                Box::new(field_from_meta(
+                    arr.values.data_type(),
+                    arr.meta.values.clone(),
+                )),
+            ),
+        }
+    }
+
     /// Get the view for this array
     pub fn as_view(&self) -> View<'_> {
         match self {
@@ -140,8 +235,8 @@ impl Array {
             Self::Struct(array) => View::Struct(array.as_view()),
             Self::Map(array) => View::Map(array.as_view()),
             Self::Dictionary(array) => View::Dictionary(array.as_view()),
-            Self::DenseUnion(array) => View::DenseUnion(array.as_view()),
-            Self::SparseUnion(array) => View::SparseUnion(array.as_view()),
+            Self::RunEndEncoded(array) => View::RunEndEncoded(array.as_view()),
+            Self::Union(array) => View::Union(array.as_view()),
         }
     }
 }
@@ -502,7 +597,7 @@ impl<T> DecimalArray<T> {
 #[derive(Clone, Debug, PartialEq)]
 pub struct DictionaryArray {
     /// The indices into the values array for each element
-    pub indices: Box<Array>,
+    pub keys: Box<Array>,
     /// The possible values of elements
     pub values: Box<Array>,
 }
@@ -511,34 +606,34 @@ impl DictionaryArray {
     /// Get the view for this array
     pub fn as_view(&self) -> DictionaryView<'_> {
         DictionaryView {
-            indices: Box::new(self.indices.as_view()),
+            keys: Box::new(self.keys.as_view()),
             values: Box::new(self.values.as_view()),
         }
     }
 }
 
-/// A union of different data types with a compact representation
+/// A union of different data types
 ///
 /// This corresponds roughly to Rust's enums. Each element has a type, which indicates the
 /// underlying array to use. For fast lookups the offsets into the underlying arrays are stored as
 /// well. For element `ì`, the value can be looked up by the pseudo code
 /// `fields[types[i]].1[offsets[i]]`.
 #[derive(Clone, Debug, PartialEq)]
-pub struct DenseUnionArray {
+pub struct UnionArray {
     /// The type of each element
     pub types: Vec<i8>,
     /// The offset into the underlying arrays
-    pub offsets: Vec<i32>,
+    pub offsets: Option<Vec<i32>>,
     /// The arrays with their metadata
     pub fields: Vec<(i8, FieldMeta, Array)>,
 }
 
-impl DenseUnionArray {
+impl UnionArray {
     /// Get the view for this array
-    pub fn as_view(&self) -> DenseUnionView<'_> {
-        DenseUnionView {
+    pub fn as_view(&self) -> UnionView<'_> {
+        UnionView {
             types: &self.types,
-            offsets: &self.offsets,
+            offsets: self.offsets.as_deref(),
             fields: self
                 .fields
                 .iter()
@@ -548,26 +643,24 @@ impl DenseUnionArray {
     }
 }
 
-/// A union of different data types with a less compact representation
-///
-#[derive(Debug, Clone, PartialEq)]
-pub struct SparseUnionArray {
-    /// The types of each element
-    pub types: Vec<i8>,
-    /// The arrays with their metadata
-    pub fields: Vec<(i8, FieldMeta, Array)>,
+/// An array with runs of deduplicated values
+#[derive(Clone, Debug, PartialEq)]
+pub struct RunEndEncodedArray {
+    /// The metadata for the arrays
+    pub meta: RunEndEncodedMeta,
+    /// The run ends for each value
+    pub run_ends: Box<Array>,
+    /// The possible values of elements
+    pub values: Box<Array>,
 }
 
-impl SparseUnionArray {
+impl RunEndEncodedArray {
     /// Get the view for this array
-    pub fn as_view(&self) -> SparseUnionView<'_> {
-        SparseUnionView {
-            types: &self.types,
-            fields: self
-                .fields
-                .iter()
-                .map(|(type_id, meta, array)| (*type_id, meta.clone(), array.as_view()))
-                .collect(),
+    pub fn as_view(&self) -> RunEndEncodedView<'_> {
+        RunEndEncodedView {
+            meta: self.meta.clone(),
+            run_ends: Box::new(self.run_ends.as_view()),
+            values: Box::new(self.values.as_view()),
         }
     }
 }

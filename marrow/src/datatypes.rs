@@ -9,11 +9,13 @@ const _: () = {
     impl AssertExpectedTraits for DataType {}
 };
 
-// assert that the `Field` and `FieldMeta` implement the expected traits
+// assert that the `Field`, `FieldMeta`, etc. implement the expected traits
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + Default + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for Field {}
     impl AssertExpectedTraits for FieldMeta {}
+    impl AssertExpectedTraits for MapMeta {}
+    impl AssertExpectedTraits for RunEndEncodedMeta {}
 };
 
 /// The data type and metadata of a field
@@ -58,6 +60,15 @@ pub(crate) fn meta_from_field(field: Field) -> FieldMeta {
         name: field.name,
         nullable: field.nullable,
         metadata: field.metadata,
+    }
+}
+
+pub(crate) fn field_from_meta(data_type: DataType, meta: FieldMeta) -> Field {
+    Field {
+        data_type,
+        name: meta.name,
+        nullable: meta.nullable,
+        metadata: meta.metadata,
     }
 }
 
@@ -107,6 +118,44 @@ impl std::default::Default for MapMeta {
                 nullable: false,
                 metadata: HashMap::new(),
             },
+            values: FieldMeta {
+                name: String::from("values"),
+                nullable: true,
+                metadata: HashMap::new(),
+            },
+        }
+    }
+}
+
+/// Metadata for run end encoded arrays
+///
+/// ```rust
+/// # use marrow::datatypes::{FieldMeta, RunEndEncodedMeta};
+/// assert_eq!(
+///     RunEndEncodedMeta::default(),
+///     RunEndEncodedMeta {
+///         run_ends_name: String::from("run_ends"),
+///         values: FieldMeta {
+///             name: String::from("values"),
+///             nullable: true,
+///             ..FieldMeta::default()
+///         },
+///     },
+/// );
+/// ```
+///
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RunEndEncodedMeta {
+    /// The name for the run ends (defaults to `"run_ends"`)
+    pub run_ends_name: String,
+    /// The metadata for the values array (defaults to a nullable with with name `"values"`)
+    pub values: FieldMeta,
+}
+
+impl std::default::Default for RunEndEncodedMeta {
+    fn default() -> Self {
+        RunEndEncodedMeta {
+            run_ends_name: String::from("run_ends"),
             values: FieldMeta {
                 name: String::from("values"),
                 nullable: true,
@@ -192,7 +241,13 @@ pub enum DataType {
     /// Maps
     Map(Box<Field>, bool),
     /// Deduplicated values
-    Dictionary(Box<DataType>, Box<DataType>, bool),
+    ///
+    /// The children are `Dictionary(indices, values)`
+    Dictionary(Box<DataType>, Box<DataType>),
+    /// Deduplicated values that continuously repeat
+    ///
+    /// The children are `RunEndEncoded(indices, values)`
+    RunEndEncoded(Box<Field>, Box<Field>),
     /// Union o different types
     Union(Vec<(i8, Field)>, UnionMode),
 }

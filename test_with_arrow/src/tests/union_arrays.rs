@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use marrow::{
-    array::{Array, DenseUnionArray, PrimitiveArray, SparseUnionArray},
+    array::{Array, PrimitiveArray, UnionArray},
     datatypes::FieldMeta,
 };
 
@@ -10,7 +10,7 @@ use super::utils::{assert_arrays_eq, PanicOnError};
 mod dense_union_array {
     use super::*;
 
-    use arrow_array::{ArrayRef, Float64Array, Int32Array, UnionArray};
+    use arrow_array::{ArrayRef, Float64Array, Int32Array};
 
     // Adapted from the arrow docs
     //
@@ -63,7 +63,7 @@ mod dense_union_array {
 
         let children = vec![Arc::new(int_array) as ArrayRef, Arc::new(float_array)];
 
-        let array = UnionArray::try_new(
+        let array = arrow_array::UnionArray::try_new(
             union_fields.into_iter().collect(),
             type_ids.into(),
             Some(offsets.into()),
@@ -77,9 +77,9 @@ mod dense_union_array {
     fn example() -> PanicOnError<()> {
         assert_arrays_eq(
             example_array()?,
-            Array::DenseUnion(DenseUnionArray {
+            Array::Union(UnionArray {
                 types: vec![0, 1, 0],
-                offsets: vec![0, 0, 1],
+                offsets: Some(vec![0, 0, 1]),
                 fields: vec![
                     (
                         0,
@@ -112,7 +112,7 @@ mod dense_union_array {
 mod sparse_union_array {
     use super::*;
 
-    use arrow_array::{ArrayRef, Float64Array, Int32Array, UnionArray};
+    use arrow_array::{ArrayRef, Float64Array, Int32Array};
 
     // Adapted from the arrow docs
     //
@@ -151,7 +151,7 @@ mod sparse_union_array {
 
         let children = vec![Arc::new(int_array) as ArrayRef, Arc::new(float_array)];
 
-        let array = UnionArray::try_new(
+        let array = arrow_array::UnionArray::try_new(
             union_fields.into_iter().collect(),
             type_ids.into_iter().collect(),
             None,
@@ -164,8 +164,9 @@ mod sparse_union_array {
     fn example() -> PanicOnError<()> {
         assert_arrays_eq(
             example_array()?,
-            Array::SparseUnion(SparseUnionArray {
+            Array::Union(UnionArray {
                 types: vec![0, 1, 0],
+                offsets: None,
                 fields: vec![
                     (
                         0,
