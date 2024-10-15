@@ -1,6 +1,6 @@
 //! Arrays with borrowed data
 //!
-//! Each view corresponds 1:1 to an array.
+//! [`View`] is the union of all views supported by `marrow`. Each view corresponds 1:1 to an array.
 use half::f16;
 
 use crate::{
