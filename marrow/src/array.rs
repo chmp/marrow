@@ -1,4 +1,6 @@
 //! Arrays with owned data
+//!
+//! [`Array`] is a union of all array types supported by `marrow`.
 use half::f16;
 
 use crate::{
@@ -22,6 +24,8 @@ const _: () = {
 };
 
 /// An array with owned data
+///
+/// The corresponding view is [`View`].
 #[derive(Clone, Debug, PartialEq)]
 #[non_exhaustive]
 pub enum Array {
@@ -199,6 +203,10 @@ impl Array {
     }
 
     /// Get the view for this array
+    ///
+    /// While the data of the arrays is borrowed, any metadata is copied (e.g., field definitions
+    /// for structs). The reason is that views may be constructed from foreign Arrow implementation
+    /// with different ways to store metadata.
     pub fn as_view(&self) -> View<'_> {
         match self {
             Self::Null(array) => View::Null(array.as_view()),
@@ -242,6 +250,8 @@ impl Array {
 }
 
 /// An array without data
+///
+/// The corresponding view is [`NullView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct NullArray {
     /// The len of the array
@@ -256,6 +266,8 @@ impl NullArray {
 }
 
 /// A `bool` array
+///
+/// The corresponding view is [`BooleanView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct BooleanArray {
     // Note: len is required to know how many bits of values are used
@@ -285,6 +297,8 @@ impl BooleanArray {
 }
 
 /// An array of primitive values
+///
+/// The corresponding view is [`PrimitiveView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct PrimitiveArray<T> {
     /// The validity of the elements as a bitmap
@@ -307,6 +321,8 @@ impl<T> PrimitiveArray<T> {
 }
 
 /// An array time values (e.g., `"12:53"`)
+///
+/// The corresponding view is [`TimeView`].
 #[derive(Debug, Clone, PartialEq)]
 pub struct TimeArray<T> {
     /// The time unit of the values
@@ -332,6 +348,8 @@ impl<T> TimeArray<T> {
 }
 
 /// An array of timestamps with an optional timezone
+///
+/// The corresponding view is [`TimestampView`].
 #[derive(Debug, Clone, PartialEq)]
 
 pub struct TimestampArray {
@@ -361,6 +379,8 @@ impl TimestampArray {
 }
 
 /// An array of structs
+///
+/// The corresponding view is [`StructView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct StructArray {
     /// The number of elements in the array
@@ -390,6 +410,8 @@ impl StructArray {
 }
 
 /// An array of maps
+///
+/// The corresponding view is [`MapView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct MapArray {
     /// The validity of the elements as a bitmap
@@ -451,6 +473,8 @@ impl MapArray {
 /// An array of lists
 ///
 /// The value element `i` is given by the pseudo code `elements[offsets[i]..[offsets[i+1]]`
+///
+/// The corresponding view is [`ListView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct ListArray<O> {
     /// The validity of the elements as a bitmap
@@ -479,6 +503,10 @@ impl<O> ListArray<O> {
 }
 
 /// An array of lists of fixed size
+///
+/// The value of element `i` is given by pseudo code `elements[(n * i)..(n * (i + 1))]`
+///
+/// The corresponding view is [`FixedSizeListView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeListArray {
     /// The number of elements in this array, each a list with `n` children
@@ -512,6 +540,8 @@ impl FixedSizeListArray {
 /// An array of bytes with varying sizes
 ///
 /// The value of element `i` can be access by the pseudo code `data[offsets[i]..offsets[i + 1]]`
+///
+/// The corresponding view is [`BytesView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct BytesArray<O> {
     /// The validity of the elements as a bitmap
@@ -537,6 +567,8 @@ impl<O> BytesArray<O> {
 }
 
 /// An array of byte vectors with fixed length
+///
+/// The corresponding view is [`FixedSizeBinaryView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeBinaryArray {
     /// The number of bytes per element
@@ -563,7 +595,9 @@ impl FixedSizeBinaryArray {
 
 /// An array of fixed point values
 ///
-/// The value of element `i` can be computed by the pseudo code: `values[i] * (10 ** -scale)`
+/// The value of element `i` can be computed by the pseudo code: `values[i] * (10).pow(-scale)`
+///
+/// The corresponding view is [`DecimalView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct DecimalArray<T> {
     /// The precision, i.e., the number of digits
@@ -594,6 +628,8 @@ impl<T> DecimalArray<T> {
 /// An array that deduplicates elements
 ///
 /// For element `i`, the value can be looked up by the pseudo code `values[indices[i]]`
+///
+/// The corresponding view is [`DictionaryView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct DictionaryArray {
     /// The indices into the values array for each element
@@ -615,9 +651,20 @@ impl DictionaryArray {
 /// A union of different data types
 ///
 /// This corresponds roughly to Rust's enums. Each element has a type, which indicates the
-/// underlying array to use. For fast lookups the offsets into the underlying arrays are stored as
-/// well. For element `ì`, the value can be looked up by the pseudo code
-/// `fields[types[i]].1[offsets[i]]`.
+/// underlying array to use.
+///
+/// The Arrow format supports two types of enums: sparse unions and dense unions. In dense unions
+/// the lengths of all fields sums to the overall length, whereas in sparse unions each field has
+/// the same length as the overall array.
+///
+/// The value of element `i` in a union can be looked up by the pseudo code
+///
+/// - `fields[types[i]].1[offsets[i]]` (for dense unions)
+/// - `fields[types[i]].1[i]` (for sparse unions)
+///
+/// For sparse unions `offsets` must be `None`.
+///
+/// The corresponding view is [`UnionView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct UnionArray {
     /// The type of each element
@@ -644,6 +691,11 @@ impl UnionArray {
 }
 
 /// An array with runs of deduplicated values
+///
+/// The value for element `i` can be looked up via `values[j]` for `j` such that `run_ends[j - 1] <=
+/// i && i < run_ends[j]`.
+///
+/// The corresponding view is [`RunEndEncodedView`].
 #[derive(Clone, Debug, PartialEq)]
 pub struct RunEndEncodedArray {
     /// The metadata for the arrays

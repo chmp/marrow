@@ -1,4 +1,7 @@
 [package]
+# make sure this package is not accidentally published
+publish = false
+
 name = "test_with_arrow"
 version = "0.1.0"
 edition = "2021"

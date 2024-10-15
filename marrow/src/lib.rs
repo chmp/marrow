@@ -14,7 +14,7 @@
 //! - [`Array`][crate::array::Array]: an array with owned data
 //! - [`View`][crate::view::View]: an array with borrowed data
 //! - [`Field`][crate::datatypes::Field]: the data type and metadata of a field
-//! - [`DataType`][crate::datatypes::DataType]: data types of array
+//! - [`DataType`][crate::datatypes::DataType]: data types of arrays
 //!
 //! ## Conversions
 //!
@@ -50,7 +50,7 @@
 //! // build the arrow array
 //! let arrow_array = Int32Array::from(vec![Some(1), Some(2), Some(3)]);
 //!
-//! // construct the view into this array
+//! // construct a view of this array
 //! let marrow_view = View::try_from(&arrow_array as &dyn arrow::array::Array)?;
 //!
 //! // access the underlying data
