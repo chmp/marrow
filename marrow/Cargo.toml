@@ -9,6 +9,7 @@ readme = "../Readme.md"
 repository = "https://github.com/chmp/marrow"
 license = "MIT"
 keywords = ["arrow"]
+rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
 # arrow-version:replace: features = ["arrow2-0-17", "arrow-{version}"]
