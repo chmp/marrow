@@ -249,6 +249,14 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
                 }
                 Ok(AT::Union(fields, Some(type_ids), (*mode).try_into()?))
             }
+            T::BinaryView => fail!(
+                ErrorKind::Unsupported,
+                "BinaryView is not supported by arrow2"
+            ),
+            T::Utf8View => fail!(
+                ErrorKind::Unsupported,
+                "Utf8View is not supported by arrow2"
+            ),
         }
     }
 }

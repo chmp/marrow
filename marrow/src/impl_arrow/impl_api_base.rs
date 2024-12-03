@@ -89,10 +89,7 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 Box::new(keys.as_ref().try_into()?),
                 Box::new(values.as_ref().try_into()?),
             )),
-            data_type => fail!(
-                ErrorKind::Unsupported,
-                "Unsupported arrow data type {data_type}"
-            ),
+            data_type => convert_extra_datatype(data_type),
         }
     }
 }
@@ -133,6 +130,8 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
             T::Float64 => Ok(AT::Float64),
             T::Utf8 => Ok(AT::Utf8),
             T::LargeUtf8 => Ok(AT::LargeUtf8),
+            T::Utf8View => build_utf8_view_datatype(),
+            T::BinaryView => build_binary_view_datatype(),
             T::Date32 => Ok(AT::Date32),
             T::Date64 => Ok(AT::Date64),
             T::Decimal128(precision, scale) => Ok(AT::Decimal128(*precision, *scale)),
