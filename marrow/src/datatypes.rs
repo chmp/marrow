@@ -214,7 +214,7 @@ pub enum DataType {
     Binary,
     /// Byte arrays stored with `i64` offsets
     LargeBinary,
-    /// Bytes stored with  ì32` offsets or inline for small values
+    /// Bytes stored with  Ã¬32` offsets or inline for small values
     BinaryView,
     /// Byte arrays with fixed length
     FixedSizeBinary(i32),

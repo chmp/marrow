@@ -305,6 +305,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrow-array"
+version = "54.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd6ed90c28c6f73a706c55799b8cc3a094e89257238e5b1d65ca7c70bd3ae23f"
+dependencies = [
+ "ahash",
+ "arrow-buffer 54.0.0",
+ "arrow-data 54.0.0",
+ "arrow-schema 54.0.0",
+ "chrono",
+ "half",
+ "hashbrown 0.15.2",
+ "num",
+]
+
+[[package]]
 name = "arrow-buffer"
 version = "37.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -476,6 +492,17 @@ name = "arrow-buffer"
 version = "53.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e4a9b9b1d6d7117f6138e13bc4dd5daa7f94e671b70e8c9c4dc37b4f5ecfc16"
+dependencies = [
+ "bytes",
+ "half",
+ "num",
+]
+
+[[package]]
+name = "arrow-buffer"
+version = "54.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fe4a40bdc1552ea10fbdeae4e5a945d8572c32f66bce457b96c13d9c46b80447"
 dependencies = [
  "bytes",
  "half",
@@ -687,6 +714,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "arrow-data"
+version = "54.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09af476cfbe9879937e50b1334c73189de6039186e025b1b1ac84b283b87b20e"
+dependencies = [
+ "arrow-buffer 54.0.0",
+ "arrow-schema 54.0.0",
+ "half",
+ "num",
+]
+
+[[package]]
 name = "arrow-schema"
 version = "37.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -835,6 +874,15 @@ name = "arrow-schema"
 version = "53.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b95513080e728e4cec37f1ff5af4f12c9688d47795d17cda80b6ec2cf74d4678"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "arrow-schema"
+version = "54.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a1822a1a952955637e85e8f9d6b0e04dd75d65492b87ec548dd593d3a1f772b"
 dependencies = [
  "serde",
 ]
@@ -1126,6 +1174,7 @@ dependencies = [
  "arrow-array 51.0.0",
  "arrow-array 52.2.0",
  "arrow-array 53.3.0",
+ "arrow-array 54.0.0",
  "arrow-buffer 37.0.0",
  "arrow-buffer 38.0.0",
  "arrow-buffer 39.0.0",
@@ -1143,6 +1192,7 @@ dependencies = [
  "arrow-buffer 51.0.0",
  "arrow-buffer 52.2.0",
  "arrow-buffer 53.3.0",
+ "arrow-buffer 54.0.0",
  "arrow-data 37.0.0",
  "arrow-data 38.0.0",
  "arrow-data 39.0.0",
@@ -1160,6 +1210,7 @@ dependencies = [
  "arrow-data 51.0.0",
  "arrow-data 52.2.0",
  "arrow-data 53.3.0",
+ "arrow-data 54.0.0",
  "arrow-schema 37.0.0",
  "arrow-schema 38.0.0",
  "arrow-schema 39.0.0",
@@ -1177,6 +1228,7 @@ dependencies = [
  "arrow-schema 51.0.0",
  "arrow-schema 52.2.0",
  "arrow-schema 53.3.0",
+ "arrow-schema 54.0.0",
  "arrow2 0.16.0",
  "arrow2 0.17.4",
  "bytemuck",
@@ -1394,6 +1446,7 @@ dependencies = [
  "arrow-array 51.0.0",
  "arrow-array 52.2.0",
  "arrow-array 53.3.0",
+ "arrow-array 54.0.0",
  "arrow-schema 37.0.0",
  "arrow-schema 38.0.0",
  "arrow-schema 39.0.0",
@@ -1411,6 +1464,7 @@ dependencies = [
  "arrow-schema 51.0.0",
  "arrow-schema 52.2.0",
  "arrow-schema 53.3.0",
+ "arrow-schema 54.0.0",
  "chrono",
  "half",
  "marrow",
