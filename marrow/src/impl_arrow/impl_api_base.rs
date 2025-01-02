@@ -89,10 +89,7 @@ impl TryFrom<&arrow_schema::DataType> for DataType {
                 Box::new(keys.as_ref().try_into()?),
                 Box::new(values.as_ref().try_into()?),
             )),
-            data_type => fail!(
-                ErrorKind::Unsupported,
-                "Unsupported arrow data type {data_type}"
-            ),
+            data_type => convert_data_type_to_marrow(data_type),
         }
     }
 }
@@ -175,6 +172,7 @@ impl TryFrom<&DataType> for arrow_schema::DataType {
                 }
                 Ok(AT::Union(fields.into_iter().collect(), (*mode).try_into()?))
             }
+            data_type => convert_data_type_from_marrow(data_type),
         }
     }
 }
@@ -570,6 +568,7 @@ fn build_array_data(value: Array) -> Result<arrow_data::ArrayData> {
                 child_data,
             )?)
         }
+        array => build_array_data_from_marrow(array),
     }
 }
 
@@ -835,8 +834,6 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 offsets: array.value_offsets(),
                 data: array.value_data(),
             }))
-        } else if let Some(array) = any.downcast_ref::<arrow_array::FixedSizeBinaryArray>() {
-            wrap_fixed_size_binary_array(array)
         } else if let Some(array) = any.downcast_ref::<arrow_array::ListArray>() {
             use arrow_array::Array;
 
@@ -1000,11 +997,7 @@ impl<'a> TryFrom<&'a dyn arrow_array::Array> for View<'a> {
                 fields,
             }))
         } else {
-            fail!(
-                ErrorKind::Unsupported,
-                "Cannot build an array view for {dt}",
-                dt = array.data_type()
-            );
+            convert_array_to_marrow(array)
         }
     }
 }

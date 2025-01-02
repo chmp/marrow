@@ -208,10 +208,14 @@ pub enum DataType {
     Utf8,
     /// Strings stored with `i64` offsets
     LargeUtf8,
+    /// Strings stored with `i32` offsets or inline for small strings
+    Utf8View,
     /// Byte arrays stored with `i32` offsets
     Binary,
     /// Byte arrays stored with `i64` offsets
     LargeBinary,
+    /// Bytes stored with  ì32` offsets or inline for small values
+    BinaryView,
     /// Byte arrays with fixed length
     FixedSizeBinary(i32),
     /// Dates as the number of days since the epoch stored as `i32` (e.g., `"2022-10-11"`)

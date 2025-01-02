@@ -11,9 +11,9 @@ use crate::{
     error::{fail, ErrorKind, Result},
     types::{DayTimeInterval, MonthDayNanoInterval},
     view::{
-        BitsWithOffset, BooleanView, BytesView, DecimalView, DictionaryView, FixedSizeBinaryView,
-        FixedSizeListView, ListView, MapView, NullView, PrimitiveView, RunEndEncodedView,
-        StructView, TimeView, TimestampView, UnionView, View,
+        BitsWithOffset, BooleanView, BytesView, BytesViewView, DecimalView, DictionaryView,
+        FixedSizeBinaryView, FixedSizeListView, ListView, MapView, NullView, PrimitiveView,
+        RunEndEncodedView, StructView, TimeView, TimestampView, UnionView, View,
     },
 };
 
@@ -83,12 +83,16 @@ pub enum Array {
     Utf8(BytesArray<i32>),
     /// A `[u8]` array with `i64` offsets of strings
     LargeUtf8(BytesArray<i64>),
+    /// TODO
+    Utf8View(BytesViewArray),
     /// A `[u8]` array with `i32` offsets
     Binary(BytesArray<i32>),
     /// A `[u8]` array with `i64` offsets
     LargeBinary(BytesArray<i64>),
     /// A `[u8; N]` array with `i32` offsets
     FixedSizeBinary(FixedSizeBinaryArray),
+    /// TODO
+    BinaryView(BytesViewArray),
     /// An `i128` array of decimals
     Decimal128(DecimalArray<i128>),
     /// An array of structs
@@ -140,8 +144,10 @@ impl Array {
             Self::Binary(_) => T::Binary,
             Self::LargeBinary(_) => T::LargeBinary,
             Self::FixedSizeBinary(arr) => T::FixedSizeBinary(arr.n),
+            Self::BinaryView(_) => T::BinaryView,
             Self::Utf8(_) => T::Utf8,
             Self::LargeUtf8(_) => T::LargeUtf8,
+            Self::Utf8View(_) => T::Utf8View,
             Self::Dictionary(arr) => T::Dictionary(
                 Box::new(arr.keys.data_type()),
                 Box::new(arr.values.data_type()),
@@ -235,8 +241,10 @@ impl Array {
             Self::Binary(array) => View::Binary(array.as_view()),
             Self::LargeBinary(array) => View::LargeBinary(array.as_view()),
             Self::FixedSizeBinary(array) => View::FixedSizeBinary(array.as_view()),
+            Self::BinaryView(array) => View::BinaryView(array.as_view()),
             Self::Utf8(array) => View::Utf8(array.as_view()),
             Self::LargeUtf8(array) => View::LargeUtf8(array.as_view()),
+            Self::Utf8View(array) => View::Utf8View(array.as_view()),
             Self::List(array) => View::List(array.as_view()),
             Self::LargeList(array) => View::LargeList(array.as_view()),
             Self::FixedSizeList(array) => View::FixedSizeList(array.as_view()),
@@ -562,6 +570,31 @@ impl<O> BytesArray<O> {
                 .map(|data| BitsWithOffset { offset: 0, data }),
             offsets: &self.offsets,
             data: &self.data,
+        }
+    }
+}
+
+/// An array of (possibly inlined) byte strings
+#[derive(Clone, Debug, PartialEq)]
+pub struct BytesViewArray {
+    /// The validity of the elements as a bitmap
+    pub validity: Option<Vec<u8>>,
+    /// The lengths and possible data
+    pub data: Vec<u128>,
+    /// The buffers containing the data for non-inlined byte strings
+    pub buffers: Vec<Vec<u8>>,
+}
+
+impl BytesViewArray {
+    /// Get the view for this array
+    pub fn as_view(&self) -> BytesViewView<'_> {
+        BytesViewView {
+            validity: self
+                .validity
+                .as_ref()
+                .map(|data| BitsWithOffset { offset: 0, data }),
+            data: &self.data,
+            buffers: self.buffers.iter().map(|b| b.as_slice()).collect(),
         }
     }
 }

@@ -249,6 +249,14 @@ impl TryFrom<&DataType> for arrow2::datatypes::DataType {
                 }
                 Ok(AT::Union(fields, Some(type_ids), (*mode).try_into()?))
             }
+            T::BinaryView => fail!(
+                ErrorKind::Unsupported,
+                "BinaryView is not supported by arrow2"
+            ),
+            T::Utf8View => fail!(
+                ErrorKind::Unsupported,
+                "Utf8View is not supported by arrow2"
+            ),
         }
     }
 }
@@ -521,6 +529,10 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
             A::YearMonthInterval(_) | A::DayTimeInterval(_) | A::MonthDayNanoInterval(_) => fail!(
                 ErrorKind::Unsupported,
                 "Interval arrays are not supported for arrow2"
+            ),
+            A::Utf8View(_) | A::BinaryView(_) => fail!(
+                ErrorKind::Unsupported,
+                "View arrays are not supported for arrow2"
             ),
         }
     }

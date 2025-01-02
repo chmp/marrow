@@ -134,7 +134,7 @@ impl std::fmt::Display for MarrowError {
 
 struct BacktraceDisplay<'a>(&'a Backtrace);
 
-impl<'a> std::fmt::Display for BacktraceDisplay<'a> {
+impl std::fmt::Display for BacktraceDisplay<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0.status() {
             BacktraceStatus::Captured => write!(f, "Backtrace:\n{bt}", bt=self.0),
