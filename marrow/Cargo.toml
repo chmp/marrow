@@ -2,7 +2,7 @@
 edition = "2021"
 
 name = "marrow"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Christopher Prohm <mail@cprohm.de>"]
 description  = "Minimalist Arrow interop"
 readme = "../Readme.md"
@@ -12,8 +12,8 @@ keywords = ["arrow"]
 rust-version = "1.70.0"
 
 [package.metadata.docs.rs]
-# arrow-version:replace: features = ["arrow2-0-17", "arrow-{version}"]
-features = ["arrow2-0-17", "arrow-54"]
+# arrow-version:replace: features = ["arrow2-0-17", "arrow-{version}", "serde"]
+features = ["arrow2-0-17", "arrow-54", "serde"]
 
 [features]
 default = []
