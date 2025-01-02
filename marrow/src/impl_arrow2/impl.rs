@@ -530,6 +530,10 @@ impl TryFrom<Array> for Box<dyn arrow2::array::Array> {
                 ErrorKind::Unsupported,
                 "Interval arrays are not supported for arrow2"
             ),
+            A::Utf8View(_) | A::BinaryView(_) => fail!(
+                ErrorKind::Unsupported,
+                "View arrays are not supported for arrow2"
+            ),
         }
     }
 }

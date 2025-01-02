@@ -15,7 +15,7 @@ use crate::{
 // assert that the `Array` implements the expected traits
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
-    impl<'a> AssertExpectedTraits for View<'a> {}
+    impl AssertExpectedTraits for View<'_> {}
 };
 
 /// An array with borrowed data
@@ -72,12 +72,16 @@ pub enum View<'a> {
     Utf8(BytesView<'a, i32>),
     /// See [`Array::LargeUtf8`][crate::array::Array::LargeUtf8]
     LargeUtf8(BytesView<'a, i64>),
+    /// [`Array::Utf8View`][crate::array::Array::Utf8View]
+    Utf8View(BytesViewView<'a>),
     /// See [`Array::Binary`][crate::array::Array::Binary]
     Binary(BytesView<'a, i32>),
     /// See [`Array::LargeBinary`][crate::array::Array::LargeBinary]
     LargeBinary(BytesView<'a, i64>),
     /// See [`Array::FixedSizeBinary`][crate::array::Array::FixedSizeBinary]
     FixedSizeBinary(FixedSizeBinaryView<'a>),
+    /// [`Array::BinaryView`][crate::array::Array::BinaryView]
+    BinaryView(BytesViewView<'a>),
     /// See [`Array::Decimal128`][crate::array::Array::Decimal128]
     Decimal128(DecimalView<'a, i128>),
     /// See [`Array::Struct`][crate::array::Array::Struct]
@@ -98,7 +102,7 @@ pub enum View<'a> {
     Union(UnionView<'a>),
 }
 
-impl<'a> View<'a> {
+impl View<'_> {
     /// Get the data type of this array
     pub fn data_type(&self) -> DataType {
         use DataType as T;
@@ -129,8 +133,10 @@ impl<'a> View<'a> {
             Self::Binary(_) => T::Binary,
             Self::LargeBinary(_) => T::LargeBinary,
             Self::FixedSizeBinary(arr) => T::FixedSizeBinary(arr.n),
+            Self::BinaryView(_) => T::BinaryView,
             Self::Utf8(_) => T::Utf8,
             Self::LargeUtf8(_) => T::LargeUtf8,
+            Self::Utf8View(_) => T::Utf8View,
             Self::Dictionary(arr) => T::Dictionary(
                 Box::new(arr.keys.data_type()),
                 Box::new(arr.values.data_type()),
@@ -351,6 +357,17 @@ pub struct BytesView<'a, O> {
     pub data: &'a [u8],
 }
 
+/// See [`BytesViewArray`][crate::array::BytesViewArray]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BytesViewView<'a> {
+    /// See [`BytesViewArray::validity`][crate::array::BytesViewArray::validity]
+    pub validity: Option<BitsWithOffset<'a>>,
+    /// See [`BytesViewArray::data`][crate::array::BytesViewArray::data]
+    pub data: &'a [u128],
+    /// See [`BytesViewArray::buffers`][crate::array::BytesViewArray::buffers]
+    pub buffers: Vec<&'a [u8]>,
+}
+
 /// See [`FixedSizeBinaryArray`][crate::array::FixedSizeBinaryArray]
 #[derive(Clone, Debug, PartialEq)]
 pub struct FixedSizeBinaryView<'a> {
@@ -358,7 +375,7 @@ pub struct FixedSizeBinaryView<'a> {
     pub n: i32,
     /// See [`FixedSizeBinaryArray::validity`][crate::array::FixedSizeBinaryArray::validity]
     pub validity: Option<BitsWithOffset<'a>>,
-    /// See [`FixedSizeBinaryArray::data`][crate::array::FixedSizeBinaryArray::data]    
+    /// See [`FixedSizeBinaryArray::data`][crate::array::FixedSizeBinaryArray::data]
     pub data: &'a [u8],
 }
 
