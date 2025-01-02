@@ -1,6 +1,6 @@
 # Change log
 
-## 0.2.1
+## dev
 
 - Add support for `BinaryView` and `Utf8View` for `arrow>=53`
 
