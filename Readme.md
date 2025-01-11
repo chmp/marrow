@@ -16,7 +16,7 @@ dependencies and can be executed with any recent Python version.
 - `python x.py test`: execute the tests
 - `python x.py check`: run linters
 - `python x.py format`: format the source code
-- `cargo test --all-features` execute the tests without the `x.py` script
+- `cargo test --all-features`: execute the tests without the `x.py` script
 
 ## License
 
