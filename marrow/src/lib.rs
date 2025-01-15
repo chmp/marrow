@@ -68,7 +68,7 @@
 //!
 //! // build the array
 //! let marrow_array = Array::Int32(PrimitiveArray {
-//!     validity: Some(vec![0b_101]),
+//!     validity: Some(marrow::bit_vec![true, false, true]),
 //!     values: vec![4, 0, 6],
 //! });
 //!
@@ -132,6 +132,9 @@ pub mod error;
 pub mod types;
 #[deny(missing_docs)]
 pub mod view;
+
+#[deny(missing_docs)]
+pub mod bits;
 
 mod impl_arrow;
 mod impl_arrow2;
