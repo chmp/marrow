@@ -55,11 +55,8 @@ macro_rules! bit_array {
             let mut res = [0; $crate::bit_array![@num_bytes, $($items),*]];
             let mut idx = 0;
             while idx < items.len() {
-                let mask: u8 = 1 << (idx % 8);
                 if items[idx] {
-                    res[idx / 8] |= mask;
-                } else {
-                    res[idx / 8] &= !mask;
+                    res[idx / 8] |= 1 << (idx % 8);
                 }
                 idx += 1;
             }
