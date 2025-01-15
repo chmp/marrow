@@ -23,7 +23,7 @@
 /// );
 /// ```
 ///
-/// If all items are const expressions, the invocation can be used in const contexts. E.g.,
+/// If all items are const expressions, the invocation can be used in const contexts, e.g.,
 ///
 /// ```rust
 /// const { marrow::bit_array![true, true, false] }
