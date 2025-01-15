@@ -21,7 +21,7 @@ fn slicing() -> PanicOnError<()> {
         PrimitiveView {
             validity: Some(BitsWithOffset {
                 offset: 0,
-                data: &[0b_0011]
+                data: &marrow::bit_array![true, true, false, false],
             }),
             values: &[1, -2, 0, 0],
         },
@@ -33,7 +33,7 @@ fn slicing() -> PanicOnError<()> {
         PrimitiveView {
             validity: Some(BitsWithOffset {
                 offset: 1,
-                data: &[0b_0011]
+                data: &marrow::bit_array![true, true, false, false]
             }),
             values: &[-2, 0, 0],
         },
@@ -45,7 +45,7 @@ fn slicing() -> PanicOnError<()> {
         PrimitiveView {
             validity: Some(BitsWithOffset {
                 offset: 2,
-                data: &[0b_0011]
+                data: &marrow::bit_array![true, true, false, false]
             }),
             values: &[0, 0],
         },
@@ -57,7 +57,7 @@ fn slicing() -> PanicOnError<()> {
         PrimitiveView {
             validity: Some(BitsWithOffset {
                 offset: 3,
-                data: &[0b_0011]
+                data: &marrow::bit_array![true, true, false, false]
             }),
             values: &[0],
         },
@@ -69,7 +69,7 @@ fn slicing() -> PanicOnError<()> {
         PrimitiveView {
             validity: Some(BitsWithOffset {
                 offset: 4,
-                data: &[0b_0011]
+                data: &marrow::bit_array![true, true, false, false]
             }),
             values: &[],
         },
@@ -102,7 +102,7 @@ mod boolean {
             Array::Boolean(BooleanArray {
                 len: 5,
                 validity: None,
-                values: vec![0b_00011],
+                values: marrow::bit_vec![true, true, false, false, false],
             }),
         )
     }
@@ -119,8 +119,8 @@ mod boolean {
             ]),
             Array::Boolean(BooleanArray {
                 len: 5,
-                validity: Some(vec![0b_11001]),
-                values: vec![0b_000001],
+                validity: Some(marrow::bit_vec![true, false, false, true, true]),
+                values: marrow::bit_vec![true, false, false, false, false],
             }),
         )
     }
@@ -145,7 +145,7 @@ mod int8 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Int8Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int8(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, -2, 0, 0],
             }),
         )
@@ -171,7 +171,7 @@ mod int16 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Int16Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int16(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, -2, 0, 0],
             }),
         )
@@ -197,7 +197,7 @@ mod int32 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Int32Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int32(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, -2, 0, 0],
             }),
         )
@@ -223,7 +223,7 @@ mod int64 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Int64Array>(vec![Some(1), Some(-2), None, None]),
             Array::Int64(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, -2, 0, 0],
             }),
         )
@@ -249,7 +249,7 @@ mod uint8 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::UInt8Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt8(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, 2, 0, 0],
             }),
         )
@@ -275,7 +275,7 @@ mod uint16 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::UInt16Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt16(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, 2, 0, 0],
             }),
         )
@@ -301,7 +301,7 @@ mod uint32 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::UInt32Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt32(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, 2, 0, 0],
             }),
         )
@@ -327,7 +327,7 @@ mod uint64 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::UInt64Array>(vec![Some(1), Some(2), None, None]),
             Array::UInt64(PrimitiveArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 values: vec![1, 2, 0, 0],
             }),
         )
@@ -363,7 +363,7 @@ mod float16 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Float16Array>(vec![None, None, Some(f16::from_f64(42.0))]),
             Array::Float16(PrimitiveArray {
-                validity: Some(vec![0b_100]),
+                validity: Some(marrow::bit_vec![false, false, true]),
                 values: vec![f16::from_f64(0.0), f16::from_f64(0.0), f16::from_f64(42.0)],
             }),
         )
@@ -389,7 +389,7 @@ mod float32 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Float32Array>(vec![None, None, Some(42.0)]),
             Array::Float32(PrimitiveArray {
-                validity: Some(vec![0b_100]),
+                validity: Some(marrow::bit_vec![false, false, true]),
                 values: vec![0.0, 0.0, 42.0],
             }),
         )
@@ -415,7 +415,7 @@ mod float64 {
         assert_arrays_eq(
             as_array_ref::<arrow_array::Float64Array>(vec![None, None, Some(42.0)]),
             Array::Float64(PrimitiveArray {
-                validity: Some(vec![0b_100]),
+                validity: Some(marrow::bit_vec![false, false, true]),
                 values: vec![0.0, 0.0, 42.0],
             }),
         )
@@ -460,7 +460,7 @@ mod date32 {
                 )),
             ]),
             Array::Date32(PrimitiveArray {
-                validity: Some(vec![0b_101]),
+                validity: Some(marrow::bit_vec![true, false, true]),
                 values: vec![ymd_as_num(2024, 10, 8), 0, ymd_as_num(-10, 12, 31)],
             }),
         )
@@ -506,7 +506,7 @@ mod date64 {
                 )),
             ]),
             Array::Date64(PrimitiveArray {
-                validity: Some(vec![0b_101]),
+                validity: Some(marrow::bit_vec![true, false, true]),
                 values: vec![ymd_as_num(2024, 10, 8), 0, ymd_as_num(-10, 12, 31)],
             }),
         )
@@ -534,7 +534,7 @@ mod time32_seconds {
             as_array_ref::<arrow_array::Time32SecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Second,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -562,7 +562,7 @@ mod time32_milliseconds {
             as_array_ref::<arrow_array::Time32MillisecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time32(TimeArray {
                 unit: TimeUnit::Millisecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -590,7 +590,7 @@ mod time64_microsecond {
             as_array_ref::<arrow_array::Time64MicrosecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Microsecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -618,7 +618,7 @@ mod time64_nanosecond {
             as_array_ref::<arrow_array::Time64NanosecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Time64(TimeArray {
                 unit: TimeUnit::Nanosecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -646,7 +646,7 @@ mod duration_second {
             as_array_ref::<arrow_array::DurationSecondArray>(vec![None, None, Some(3), Some(4)]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Second,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -679,7 +679,7 @@ mod duration_millisecond {
             ]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Millisecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -712,7 +712,7 @@ mod duration_microsecond {
             ]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Microsecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -745,7 +745,7 @@ mod duration_nanosecond {
             ]),
             Array::Duration(TimeArray {
                 unit: TimeUnit::Nanosecond,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -771,7 +771,7 @@ mod interval_year_month {
         assert_arrays_eq(
             as_array_ref::<arrow_array::IntervalYearMonthArray>(vec![Some(1), None, Some(3)]),
             Array::YearMonthInterval(PrimitiveArray {
-                validity: Some(vec![0b_101]),
+                validity: Some(marrow::bit_vec![true, false, true]),
                 values: vec![1, 0, 3],
             }),
         )
@@ -801,7 +801,7 @@ mod timestamp_second {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: None,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -835,7 +835,7 @@ mod timestamp_second_utc {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Second,
                 timezone: Some(String::from("UTC")),
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -870,7 +870,7 @@ mod timestamp_millisecond {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Millisecond,
                 timezone: None,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -905,7 +905,7 @@ mod timestamp_millisecond_utc {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Millisecond,
                 timezone: Some(String::from("UTC")),
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
