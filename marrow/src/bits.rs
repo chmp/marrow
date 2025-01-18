@@ -6,7 +6,7 @@
 //! To construct bit vectors as arrays or vectors see [`marrow::bit_array!`][crate::bit_array] and
 //! [`marrow::bit_vec!`][crate::bit_vec].
 
-/// Build a fixed-size bit array (`[u8; M]`) from a sequence of booleans
+/// Build a fixed-size bit array from a sequence of booleans
 ///
 /// ```rust
 /// assert_eq!(marrow::bit_array![true],  [0b_1]);
@@ -28,11 +28,15 @@
 /// If all items are const expressions, `bit_array` can be used in const contexts, e.g.,
 ///
 /// ```rust
-/// const { marrow::bit_array![true, true, false] }
+/// const fn func() -> bool {
+///     3 % 2 == 0
+/// }
+///
+/// const { marrow::bit_array![true, false, func()] }
 /// # ;
 /// ```
 ///
-/// The rules with `@num_bits` and `@num_bytes` are internal rules and are not subject to
+/// Rules starting with `@num_bits` and `@num_bytes` are internal and are not subject to
 /// compatibility guarantees.
 ///
 /// See also [`marrow::bits`][crate::bits].
@@ -87,16 +91,13 @@ const _: () = const {
 
 /// Construct a bit vector (`Vec<u8>`) from a sequence of booleans
 ///
-/// Equivalent to `marrow::bit_array![..].to_vec()`. See [`marrow::bit_array`][crate::bit_array] for
-/// more details.
-///
-/// Usage:
-///
 /// ```rust
 /// assert_eq!(marrow::bit_vec![true, true, false, true],  vec![0b_1011]);
 /// ```
 ///
-/// See also [`marrow::bits`][crate::bits].
+/// Equivalent to `marrow::bit_array![..].to_vec()`. See [`marrow::bit_array`][crate::bit_array] for
+/// more details. See also [`marrow::bits`][crate::bits].
+///
 #[macro_export]
 macro_rules! bit_vec {
     ($($items:expr),* $(,)?) => { $crate::bit_array![$($items),*].to_vec() }
@@ -121,22 +122,24 @@ fn test_bit_array() {
 /// Get a bit of a bit vector
 ///
 /// ```rust
+/// # use marrow::bits;
+/// #
 /// let bit_vec = &[0b_01010011, 0b_10111];
 ///
-/// assert_eq!(marrow::bits::get(bit_vec, 0), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 1), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 2), false);
-/// assert_eq!(marrow::bits::get(bit_vec, 3), false);
-/// assert_eq!(marrow::bits::get(bit_vec, 4), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 5), false);
-/// assert_eq!(marrow::bits::get(bit_vec, 6), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 7), false);
+/// assert_eq!(bits::get(bit_vec, 0), true);
+/// assert_eq!(bits::get(bit_vec, 1), true);
+/// assert_eq!(bits::get(bit_vec, 2), false);
+/// assert_eq!(bits::get(bit_vec, 3), false);
+/// assert_eq!(bits::get(bit_vec, 4), true);
+/// assert_eq!(bits::get(bit_vec, 5), false);
+/// assert_eq!(bits::get(bit_vec, 6), true);
+/// assert_eq!(bits::get(bit_vec, 7), false);
 ///
-/// assert_eq!(marrow::bits::get(bit_vec, 8), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 9), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 10), true);
-/// assert_eq!(marrow::bits::get(bit_vec, 11), false);
-/// assert_eq!(marrow::bits::get(bit_vec, 12), true);
+/// assert_eq!(bits::get(bit_vec, 8), true);
+/// assert_eq!(bits::get(bit_vec, 9), true);
+/// assert_eq!(bits::get(bit_vec, 10), true);
+/// assert_eq!(bits::get(bit_vec, 11), false);
+/// assert_eq!(bits::get(bit_vec, 12), true);
 /// ```
 pub const fn get(bit_vec: &[u8], idx: usize) -> bool {
     let mask = 1 << (idx % 8);
@@ -146,22 +149,24 @@ pub const fn get(bit_vec: &[u8], idx: usize) -> bool {
 /// Set a bit of a bit vector
 ///
 /// ```rust
+/// # use marrow::bits;
+/// #
 /// let mut bit_vec = [0; 2];
 ///
 /// // update bits in random order
-/// marrow::bits::set(&mut bit_vec, 9, true);
-/// marrow::bits::set(&mut bit_vec, 4, true);
-/// marrow::bits::set(&mut bit_vec, 11, false);
-/// marrow::bits::set(&mut bit_vec, 2, false);
-/// marrow::bits::set(&mut bit_vec, 7, false);
-/// marrow::bits::set(&mut bit_vec, 1, true);
-/// marrow::bits::set(&mut bit_vec, 12, true);
-/// marrow::bits::set(&mut bit_vec, 0, true);
-/// marrow::bits::set(&mut bit_vec, 5, false);
-/// marrow::bits::set(&mut bit_vec, 8, true);
-/// marrow::bits::set(&mut bit_vec, 3, false);
-/// marrow::bits::set(&mut bit_vec, 10, true);
-/// marrow::bits::set(&mut bit_vec, 6, true);
+/// bits::set(&mut bit_vec, 9, true);
+/// bits::set(&mut bit_vec, 4, true);
+/// bits::set(&mut bit_vec, 11, false);
+/// bits::set(&mut bit_vec, 2, false);
+/// bits::set(&mut bit_vec, 7, false);
+/// bits::set(&mut bit_vec, 1, true);
+/// bits::set(&mut bit_vec, 12, true);
+/// bits::set(&mut bit_vec, 0, true);
+/// bits::set(&mut bit_vec, 5, false);
+/// bits::set(&mut bit_vec, 8, true);
+/// bits::set(&mut bit_vec, 3, false);
+/// bits::set(&mut bit_vec, 10, true);
+/// bits::set(&mut bit_vec, 6, true);
 ///
 /// assert_eq!(&bit_vec, &[0b_01010011, 0b_10111]);
 ///
@@ -181,42 +186,44 @@ pub const fn set(bit_vec: &mut [u8], idx: usize, value: bool) {
 /// Usage:
 ///
 /// ```rust
+/// # use marrow::bits;
+/// #
 /// let mut vec = Vec::new();
 /// let mut len = 0;
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1]);
 /// assert_eq!(len, 1);
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11]);
 /// assert_eq!(len, 2);
 ///
-/// marrow::bits::push(&mut vec, &mut len, false);
+/// bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_011]);
 /// assert_eq!(len, 3);
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1011]);
 /// assert_eq!(len, 4);
 ///
-/// marrow::bits::push(&mut vec, &mut len, false);
+/// bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_01011]);
 /// assert_eq!(len, 5);
 ///
-/// marrow::bits::push(&mut vec, &mut len, false);
+/// bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_001011]);
 /// assert_eq!(len, 6);
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1001011]);
 /// assert_eq!(len, 7);
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11001011]);
 /// assert_eq!(len, 8);
 ///
-/// marrow::bits::push(&mut vec, &mut len, true);
+/// bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11001011, 0b_1]);
 /// assert_eq!(len, 9);
 /// ```
