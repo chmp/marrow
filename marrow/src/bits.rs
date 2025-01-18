@@ -8,8 +8,6 @@
 
 /// Build a fixed-size bit array (`[u8; M]`) from a sequence of booleans
 ///
-/// Usage:
-///
 /// ```rust
 /// assert_eq!(marrow::bit_array![true],  [0b_1]);
 /// assert_eq!(marrow::bit_array![true, true],  [0b_11]);
@@ -27,30 +25,15 @@
 /// );
 /// ```
 ///
-/// If all items are const expressions, the `bit_array` can be used in const contexts, e.g.,
+/// If all items are const expressions, `bit_array` can be used in const contexts, e.g.,
 ///
 /// ```rust
 /// const { marrow::bit_array![true, true, false] }
 /// # ;
 /// ```
 ///
-/// When prefixing the items with `@num_bits`, `bit_array` expands to a const-expression that
-/// evaluates to the number of items:
-///
-/// ```rust
-/// assert!(const { marrow::bit_array![@num_bits, ] } == 0);
-/// assert!(const { marrow::bit_array![@num_bits, 1, 2, 3] } == 3);
-/// assert!(const { marrow::bit_array![@num_bits, 1, 2, 3, 4, 5, 6, 7, 8, 9] } == 9);
-/// ```
-///
-/// When prefixing the items with `@num_bytes`, `bit_array` expands to a const expression that
-/// evaluates to the number of bytes required to encode the items:
-///
-/// ```rust
-/// assert!(const { marrow::bit_array![@num_bytes, ] } == 0);
-/// assert!(const { marrow::bit_array![@num_bytes, 1, 2, 3] } == 1);
-/// assert!(const { marrow::bit_array![@num_bytes, 1, 2, 3, 4, 5, 6, 7, 8, 9] } == 2);
-/// ```
+/// The rules with `@num_bits` and `@num_bytes` are internal rules and are not subject to
+/// compatibility guarantees.
 ///
 /// See also [`marrow::bits`][crate::bits].
 #[macro_export]
@@ -140,22 +123,22 @@ fn test_bit_array() {
 /// ```rust
 /// let bit_vec = &[0b_01010011, 0b_10111];
 ///
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 0), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 1), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 2), false);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 3), false);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 4), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 5), false);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 6), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 7), false);
+/// assert_eq!(marrow::bits::get(bit_vec, 0), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 1), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 2), false);
+/// assert_eq!(marrow::bits::get(bit_vec, 3), false);
+/// assert_eq!(marrow::bits::get(bit_vec, 4), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 5), false);
+/// assert_eq!(marrow::bits::get(bit_vec, 6), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 7), false);
 ///
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 8), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 9), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 10), true);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 11), false);
-/// assert_eq!(marrow::bits::get_bit(bit_vec, 12), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 8), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 9), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 10), true);
+/// assert_eq!(marrow::bits::get(bit_vec, 11), false);
+/// assert_eq!(marrow::bits::get(bit_vec, 12), true);
 /// ```
-pub const fn get_bit(bit_vec: &[u8], idx: usize) -> bool {
+pub const fn get(bit_vec: &[u8], idx: usize) -> bool {
     let mask = 1 << (idx % 8);
     bit_vec[idx / 8] & mask == mask
 }
@@ -166,24 +149,24 @@ pub const fn get_bit(bit_vec: &[u8], idx: usize) -> bool {
 /// let mut bit_vec = [0; 2];
 ///
 /// // update bits in random order
-/// marrow::bits::set_bit(&mut bit_vec, 9, true);
-/// marrow::bits::set_bit(&mut bit_vec, 4, true);
-/// marrow::bits::set_bit(&mut bit_vec, 11, false);
-/// marrow::bits::set_bit(&mut bit_vec, 2, false);
-/// marrow::bits::set_bit(&mut bit_vec, 7, false);
-/// marrow::bits::set_bit(&mut bit_vec, 1, true);
-/// marrow::bits::set_bit(&mut bit_vec, 12, true);
-/// marrow::bits::set_bit(&mut bit_vec, 0, true);
-/// marrow::bits::set_bit(&mut bit_vec, 5, false);
-/// marrow::bits::set_bit(&mut bit_vec, 8, true);
-/// marrow::bits::set_bit(&mut bit_vec, 3, false);
-/// marrow::bits::set_bit(&mut bit_vec, 10, true);
-/// marrow::bits::set_bit(&mut bit_vec, 6, true);
+/// marrow::bits::set(&mut bit_vec, 9, true);
+/// marrow::bits::set(&mut bit_vec, 4, true);
+/// marrow::bits::set(&mut bit_vec, 11, false);
+/// marrow::bits::set(&mut bit_vec, 2, false);
+/// marrow::bits::set(&mut bit_vec, 7, false);
+/// marrow::bits::set(&mut bit_vec, 1, true);
+/// marrow::bits::set(&mut bit_vec, 12, true);
+/// marrow::bits::set(&mut bit_vec, 0, true);
+/// marrow::bits::set(&mut bit_vec, 5, false);
+/// marrow::bits::set(&mut bit_vec, 8, true);
+/// marrow::bits::set(&mut bit_vec, 3, false);
+/// marrow::bits::set(&mut bit_vec, 10, true);
+/// marrow::bits::set(&mut bit_vec, 6, true);
 ///
 /// assert_eq!(&bit_vec, &[0b_01010011, 0b_10111]);
 ///
 /// ```
-pub const fn set_bit(bit_vec: &mut [u8], idx: usize, value: bool) {
+pub const fn set(bit_vec: &mut [u8], idx: usize, value: bool) {
     let mask = 1 << (idx % 8);
     if value {
         bit_vec[idx / 8] |= mask;
@@ -201,44 +184,44 @@ pub const fn set_bit(bit_vec: &mut [u8], idx: usize, value: bool) {
 /// let mut vec = Vec::new();
 /// let mut len = 0;
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1]);
 /// assert_eq!(len, 1);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11]);
 /// assert_eq!(len, 2);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, false);
+/// marrow::bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_011]);
 /// assert_eq!(len, 3);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1011]);
 /// assert_eq!(len, 4);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, false);
+/// marrow::bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_01011]);
 /// assert_eq!(len, 5);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, false);
+/// marrow::bits::push(&mut vec, &mut len, false);
 /// assert_eq!(&vec, &[0b_001011]);
 /// assert_eq!(len, 6);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_1001011]);
 /// assert_eq!(len, 7);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11001011]);
 /// assert_eq!(len, 8);
 ///
-/// marrow::bits::push_bit(&mut vec, &mut len, true);
+/// marrow::bits::push(&mut vec, &mut len, true);
 /// assert_eq!(&vec, &[0b_11001011, 0b_1]);
 /// assert_eq!(len, 9);
 /// ```
 ///
-pub fn push_bit(bit_vec: &mut Vec<u8>, len: &mut usize, value: bool) {
+pub fn push(bit_vec: &mut Vec<u8>, len: &mut usize, value: bool) {
     // custom impl to keep MSRV
     fn div_ceil(a: usize, b: usize) -> usize {
         (a / b) + if (a % b) != 0 { 1 } else { 0 }
@@ -254,7 +237,7 @@ pub fn push_bit(bit_vec: &mut Vec<u8>, len: &mut usize, value: bool) {
         bit_vec.push(0);
     }
 
-    set_bit(bit_vec, *len, value);
+    set(bit_vec, *len, value);
     // NOTE: needs to be last
     *len += 1;
 }
