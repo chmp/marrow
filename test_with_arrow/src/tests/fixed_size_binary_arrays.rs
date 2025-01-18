@@ -31,7 +31,7 @@ mod fixed_size_binary {
                 None,
             ]),
             Array::FixedSizeBinary(FixedSizeBinaryArray {
-                validity: Some(vec![0b_0011]),
+                validity: Some(marrow::bit_vec![true, true, false, false]),
                 n: 3,
                 data: b"foobar\0\0\0\0\0\0".to_vec(),
             }),

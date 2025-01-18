@@ -176,7 +176,7 @@ mod sparse_union_array {
                             ..Default::default()
                         },
                         Array::Int32(PrimitiveArray {
-                            validity: Some(vec![0b_101]),
+                            validity: Some(marrow::bit_vec![true, false, true]),
                             values: vec![1, 0, 34],
                         }),
                     ),
@@ -188,7 +188,7 @@ mod sparse_union_array {
                             ..Default::default()
                         },
                         Array::Float64(PrimitiveArray {
-                            validity: Some(vec![0b_010]),
+                            validity: Some(marrow::bit_vec![false, true, false]),
                             values: vec![0.0, 3.2, 0.0],
                         }),
                     ),
