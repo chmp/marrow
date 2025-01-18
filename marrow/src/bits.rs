@@ -225,13 +225,18 @@ pub const fn set_bit(bit_vec: &mut [u8], idx: usize, value: bool) {
 /// ```
 ///
 pub fn push_bit(bit_vec: &mut Vec<u8>, len: &mut usize, value: bool) {
+    // custom impl to keep MSRV
+    fn div_ceil(a: usize, b: usize) -> usize {
+        (a / b) + if (a % b) != 0 { 1 } else { 0 }
+    }
+
     assert_eq!(
-        len.div_ceil(8),
+        div_ceil(*len, 8),
         bit_vec.len(),
         "len and bit_vec incompatible"
     );
 
-    if 8 * bit_vec.len() == *len {
+    if *len == 8 * bit_vec.len() {
         bit_vec.push(0);
     }
 
