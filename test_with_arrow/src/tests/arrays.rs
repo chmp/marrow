@@ -1316,7 +1316,7 @@ mod large_list {
         assert_arrays_eq(
             example(),
             Array::LargeList(ListArray {
-                validity: Some(vec![0b_1101]),
+                validity: Some(marrow::bit_vec![true, false, true, true]),
                 offsets: vec![0, 3, 3, 3, 4],
                 meta: FieldMeta {
                     name: String::from("item"),
@@ -1324,7 +1324,7 @@ mod large_list {
                     metadata: Default::default(),
                 },
                 elements: Box::new(Array::Int32(PrimitiveArray {
-                    validity: Some(vec![0b_0111]),
+                    validity: Some(marrow::bit_vec!(true, true, true, false)),
                     values: vec![1, 2, 3, 0],
                 })),
             }),
@@ -1396,14 +1396,19 @@ mod fixed_size_list {
             Array::FixedSizeList(FixedSizeListArray {
                 len: 4,
                 n: 3,
-                validity: Some(vec![0b_1101]),
+                validity: Some(marrow::bit_vec![true, false, true, true]),
                 meta: FieldMeta {
                     name: String::from("item"),
                     nullable: true,
                     metadata: Default::default(),
                 },
                 elements: Box::new(Array::Int32(PrimitiveArray {
-                    validity: Some(vec![0b_01_000_111, 0b_011_1]),
+                    validity: Some(marrow::bit_vec![
+                        true, true, true, // [0, 1, 2]
+                        false, false, false, // null
+                        true, false, true, // [3, null, 5]
+                        true, true, false, // [6, 7, null]]
+                    ]),
                     values: vec![0, 1, 2, 0, 0, 0, 3, 0, 5, 6, 7, 0],
                 })),
             }),
@@ -1469,7 +1474,7 @@ mod map {
             example_array()?,
             Array::Map(MapArray {
                 meta: MapMeta::default(),
-                validity: Some(vec![0b_0111]),
+                validity: Some(marrow::bit_vec![true, true, true, false]),
                 offsets: vec![0, 1, 3, 3, 3],
                 keys: Box::new(Array::Utf8(BytesArray {
                     validity: None,
@@ -1529,7 +1534,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::Int8(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1573,7 +1578,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::Int16(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1617,7 +1622,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::Int32(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1661,7 +1666,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::Int64(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1705,7 +1710,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::UInt8(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1749,7 +1754,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::UInt16(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1793,7 +1798,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::UInt32(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1837,7 +1842,7 @@ mod dictionary {
             ])?,
             Array::Dictionary(DictionaryArray {
                 keys: Box::new(Array::UInt64(PrimitiveArray {
-                    validity: Some(vec![0b_11001]),
+                    validity: Some(marrow::bit_vec![true, false, false, true, true]),
                     values: vec![0, 0, 0, 1, 1],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
@@ -1901,7 +1906,7 @@ mod run_end_encoded {
                     values: vec![2, 4, 5, 6],
                 })),
                 values: Box::new(Array::Utf8(BytesArray {
-                    validity: Some(vec![0b1101]),
+                    validity: Some(marrow::bit_vec![true, false, true, true]),
                     offsets: vec![0, 5, 5, 10, 13],
                     data: b"helloworldfoo".to_vec(),
                 })),
