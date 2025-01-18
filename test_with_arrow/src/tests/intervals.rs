@@ -90,7 +90,7 @@ mod internval_day_time {
                 Some(arrow_array::types::IntervalDayTimeType::make_value(5, 6)),
             ]),
             Array::DayTimeInterval(PrimitiveArray {
-                validity: Some(vec![0b_101]),
+                validity: Some(marrow::bit_vec![true, false, true]),
                 values: vec![
                     DayTimeInterval {
                         days: 1,
@@ -163,7 +163,7 @@ mod interval_month_day_nano {
                 )),
             ]),
             Array::MonthDayNanoInterval(PrimitiveArray {
-                validity: Some(vec![0b_101]),
+                validity: Some(marrow::bit_vec![true, false, true]),
                 values: vec![
                     MonthDayNanoInterval {
                         months: 1,
