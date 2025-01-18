@@ -940,7 +940,7 @@ mod timestamp_microsecond {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Microsecond,
                 timezone: None,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -975,7 +975,7 @@ mod timestamp_microsecond_utc {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Microsecond,
                 timezone: Some(String::from("UTC")),
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -1010,7 +1010,7 @@ mod timestamp_nanosecond {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Nanosecond,
                 timezone: None,
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -1045,7 +1045,7 @@ mod timestamp_nanosecond_utc {
             Array::Timestamp(TimestampArray {
                 unit: TimeUnit::Nanosecond,
                 timezone: Some(String::from("UTC")),
-                validity: Some(vec![0b_1100]),
+                validity: Some(marrow::bit_vec![false, false, true, true]),
                 values: vec![0, 0, 3, 4],
             }),
         )
@@ -1078,7 +1078,7 @@ mod utf8 {
                 Some("world"),
             ]),
             Array::Utf8(BytesArray {
-                validity: Some(vec![0b_10011]),
+                validity: Some(marrow::bit_vec![true, true, false, false, true]),
                 offsets: vec![0, 3, 6, 6, 6, 11],
                 data: b"foobarworld".to_vec(),
             }),
@@ -1114,7 +1114,7 @@ mod large_utf8 {
                 Some("world"),
             ]),
             Array::LargeUtf8(BytesArray {
-                validity: Some(vec![0b_10011]),
+                validity: Some(marrow::bit_vec![true, true, false, false, true]),
                 offsets: vec![0, 3, 6, 6, 6, 11],
                 data: b"foobarworld".to_vec(),
             }),
@@ -1154,7 +1154,7 @@ mod binary {
                 Some(b"world"),
             ]),
             Array::Binary(BytesArray {
-                validity: Some(vec![0b_10011]),
+                validity: Some(marrow::bit_vec![true, true, false, false, true]),
                 offsets: vec![0, 3, 6, 6, 6, 11],
                 data: b"foobarworld".to_vec(),
             }),
@@ -1194,7 +1194,7 @@ mod large_binary {
                 Some(b"world"),
             ]),
             Array::LargeBinary(BytesArray {
-                validity: Some(vec![0b_10011]),
+                validity: Some(marrow::bit_vec![true, true, false, false, true]),
                 offsets: vec![0, 3, 6, 6, 6, 11],
                 data: b"foobarworld".to_vec(),
             }),
@@ -1251,7 +1251,7 @@ mod list {
         assert_arrays_eq(
             example(),
             Array::List(ListArray {
-                validity: Some(vec![0b_1101]),
+                validity: Some(marrow::bit_vec![true, false, true, true]),
                 offsets: vec![0, 3, 3, 3, 4],
                 meta: FieldMeta {
                     name: String::from("item"),
@@ -1259,7 +1259,7 @@ mod list {
                     metadata: Default::default(),
                 },
                 elements: Box::new(Array::Int32(PrimitiveArray {
-                    validity: Some(vec![0b_0111]),
+                    validity: Some(marrow::bit_vec![true, true, true, false]),
                     values: vec![1, 2, 3, 0],
                 })),
             }),
