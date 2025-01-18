@@ -1,6 +1,10 @@
 //! Helpers to work with bit vectors
 //!
-//! See also [`marrow::bit_array!`][crate::bit_array] and [`marrow::bit_vec!`][crate::bit_vec].
+//! Bit vectors encode eight booleans into the bits of a byte. The Arrow format uses them to encode
+//! validity information of arrays, but also for boolean arrays.
+//!
+//! To construct bit vectors as arrays or vectors see [`marrow::bit_array!`][crate::bit_array] and
+//! [`marrow::bit_vec!`][crate::bit_vec].
 
 /// Build a fixed-size bit array (`[u8; M]`) from a sequence of booleans
 ///
@@ -23,14 +27,14 @@
 /// );
 /// ```
 ///
-/// If all items are const expressions, the invocation can be used in const contexts, e.g.,
+/// If all items are const expressions, the `bit_array` can be used in const contexts, e.g.,
 ///
 /// ```rust
 /// const { marrow::bit_array![true, true, false] }
 /// # ;
 /// ```
 ///
-/// When prefixing the items with `@num_bits`, the macro expands to a const-expression that
+/// When prefixing the items with `@num_bits`, `bit_array` expands to a const-expression that
 /// evaluates to the number of items:
 ///
 /// ```rust
@@ -39,20 +43,27 @@
 /// assert!(const { marrow::bit_array![@num_bits, 1, 2, 3, 4, 5, 6, 7, 8, 9] } == 9);
 /// ```
 ///
-/// When prefix the items with `@num_bytes`, the macro expands to
-/// a const expression that evaluates to the number of bytes required to encode the items:
+/// When prefixing the items with `@num_bytes`, `bit_array` expands to a const expression that
+/// evaluates to the number of bytes required to encode the items:
 ///
 /// ```rust
 /// assert!(const { marrow::bit_array![@num_bytes, ] } == 0);
 /// assert!(const { marrow::bit_array![@num_bytes, 1, 2, 3] } == 1);
 /// assert!(const { marrow::bit_array![@num_bytes, 1, 2, 3, 4, 5, 6, 7, 8, 9] } == 2);
 /// ```
+///
+/// See also [`marrow::bits`][crate::bits].
 #[macro_export]
 macro_rules! bit_array {
     ($($items:expr),* $(,)?) => {
         {
-            let items: [bool; $crate::bit_array![@num_bits, $($items),*]] = [$($items),*];
-            let mut res = [0; $crate::bit_array![@num_bytes, $($items),*]];
+            const N: usize = $crate::bit_array![@num_bits, $($items),*];
+            const M: usize = $crate::bit_array![@num_bytes, $($items),*];
+
+            let items: [bool; N] = [$($items),*];
+            let mut res: [u8; M] = [0; M];
+
+            // use while loop to be const-compatible
             let mut idx = 0;
             while idx < items.len() {
                 if items[idx] {
@@ -93,13 +104,16 @@ const _: () = const {
 
 /// Construct a bit vector (`Vec<u8>`) from a sequence of booleans
 ///
-/// Equivalent to `marrow::bit_array![..].to_vec()`
+/// Equivalent to `marrow::bit_array![..].to_vec()`. See [`marrow::bit_array`][crate::bit_array] for
+/// more details.
 ///
 /// Usage:
 ///
 /// ```rust
 /// assert_eq!(marrow::bit_vec![true, true, false, true],  vec![0b_1011]);
 /// ```
+///
+/// See also [`marrow::bits`][crate::bits].
 #[macro_export]
 macro_rules! bit_vec {
     ($($items:expr),* $(,)?) => { $crate::bit_array![$($items),*].to_vec() }
