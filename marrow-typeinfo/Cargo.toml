@@ -1,0 +1,8 @@
+[package]
+name = "marrow-typeinfo"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+marrow = { path = "../marrow" }
+marrow-typeinfo-derive = { path = "../marrow-typeinfo-derive" }

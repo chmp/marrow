@@ -145,7 +145,7 @@ def _workflow_check_steps():
 
 @cmd(help="Format the code")
 def format():
-    _sh(f"{python} -m black {_q(__file__)}")
+    #_sh(f"{python} -m black {_q(__file__)}")
     _sh("cargo fmt")
 
     # the impl files are not found by cargo fmt
@@ -209,11 +209,11 @@ def doc(private=False, open=False):
 
 @cmd()
 def check_cargo_toml():
-    import tomli
+    import tomllib
 
     print(":: check Cargo.toml")
     with open(self_path / "marrow" / "Cargo.toml", "rb") as fobj:
-        config = tomli.load(fobj)
+        config = tomllib.load(fobj)
 
     for label, features in [
         (
