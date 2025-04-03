@@ -1,5 +1,5 @@
-use marrow::datatypes::{DataType, Field, UnionMode};
-use marrow_typeinfo::TypeInfo;
+use marrow::datatypes::{DataType, Field, TimeUnit, UnionMode};
+use marrow_typeinfo::{Context, TypeInfo};
 
 #[test]
 fn example() {
@@ -11,7 +11,7 @@ fn example() {
     }
 
     assert_eq!(
-        <S as TypeInfo>::get_data_type(&Default::default()),
+        Context::default().get_data_type::<S>(),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -30,6 +30,45 @@ fn example() {
 }
 
 #[test]
+fn customize() {
+    #[derive(TypeInfo)]
+    #[allow(dead_code)]
+    struct S {
+        #[marrow_type_info(with = "timestamp_field")]
+        a: i64,
+        b: [u8; 4],
+    }
+
+    assert_eq!(
+        Context::default().get_data_type::<S>(),
+        Ok(DataType::Struct(vec![
+            Field {
+                name: String::from("a"),
+                data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
+                nullable: false,
+                metadata: Default::default(),
+            },
+            Field {
+                name: String::from("b"),
+                data_type: DataType::FixedSizeBinary(4),
+                nullable: false,
+                metadata: Default::default(),
+            }
+        ]))
+    );
+}
+
+// TODO: pass context
+fn timestamp_field(_: &Context, name: &str) -> Field {
+    Field {
+        name: String::from(name),
+        data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
+        nullable: false,
+        metadata: Default::default(),
+    }
+}
+
+#[test]
 fn fieldless_union() {
     #[derive(TypeInfo)]
     #[allow(dead_code)]
@@ -40,7 +79,7 @@ fn fieldless_union() {
     }
 
     assert_eq!(
-        <E as TypeInfo>::get_data_type(&Default::default()),
+        Context::default().get_data_type::<E>(),
         Ok(DataType::Union(
             vec![
                 (

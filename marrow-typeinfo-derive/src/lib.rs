@@ -1,11 +1,11 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    Data, DeriveInput, Fields, FieldsNamed, Ident, Variant, parse_macro_input,
-    punctuated::Punctuated, token::Comma,
+    Attribute, Data, DeriveInput, Expr, Fields, FieldsNamed, Ident, Lit, Meta, Token, Variant,
+    parse_macro_input, punctuated::Punctuated, token::Comma,
 };
 
-#[proc_macro_derive(TypeInfo)]
+#[proc_macro_derive(TypeInfo, attributes(marrow_type_info))]
 pub fn array_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
@@ -28,6 +28,37 @@ pub fn array_builder(input: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
+fn get_use_call(attrs: &[Attribute]) -> Option<Ident> {
+    for attr in attrs {
+        if !attr.path().is_ident("marrow_type_info") {
+            continue;
+        }
+
+        let nested = attr
+            .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
+            .unwrap();
+        for meta in nested {
+            match meta {
+                Meta::NameValue(meta) => {
+                    if !meta.path.is_ident("with") {
+                        continue;
+                    }
+                    match meta.value {
+                        Expr::Lit(lit) => match lit.lit {
+                            Lit::Str(str) => return Some(Ident::new(&str.value(), str.span())),
+                            _ => unimplemented!(),
+                        },
+                        _ => unimplemented!(),
+                    }
+                }
+                _ => unimplemented!(),
+            }
+        }
+    }
+
+    None
+}
+
 fn derive_for_struct(name: &Ident, fields: &FieldsNamed) -> proc_macro2::TokenStream {
     let mut field_exprs = Vec::new();
 
@@ -35,9 +66,16 @@ fn derive_for_struct(name: &Ident, fields: &FieldsNamed) -> proc_macro2::TokenSt
         let field_name = field.ident.as_ref().expect("named filed without ident");
         let ty = &field.ty;
 
-        field_exprs.push(quote! {
-            fields.push(<#ty as ::marrow_typeinfo::TypeInfo>::get_field(stringify!(#field_name), context)?);
-        })
+        if let Some(func) = get_use_call(&field.attrs) {
+            field_exprs.push(quote! {
+                // TODO: pass context, include type?
+                fields.push(#func(context.get_context(), stringify!(#field_name)));
+            });
+        } else {
+            field_exprs.push(quote! {
+                fields.push(context.get_context().get_field::<#ty>(stringify!(#field_name))?);
+            })
+        }
     }
 
     quote! {
@@ -45,7 +83,7 @@ fn derive_for_struct(name: &Ident, fields: &FieldsNamed) -> proc_macro2::TokenSt
             impl ::marrow_typeinfo::TypeInfo for #name {
                 fn get_field(
                     name: &::std::primitive::str,
-                    context: &::marrow_typeinfo::Context,
+                    context: ::marrow_typeinfo::ContextRef<'_>,
                 ) -> ::std::result::Result<
                     ::marrow::datatypes::Field,
                     ::marrow_typeinfo::Error,
@@ -74,6 +112,11 @@ fn derive_for_enum(
     for (idx, variant) in variants.iter().enumerate() {
         let variant_name = &variant.ident;
 
+        if let Some(func) = get_use_call(&variant.attrs) {
+            variant_exprs.push(quote! { #func(stringify!(#variant_name)) });
+            continue;
+        }
+
         match variant.fields {
             Fields::Unit => {
                 variant_exprs.push(quote! {
@@ -95,7 +138,7 @@ fn derive_for_enum(
             impl ::marrow_typeinfo::TypeInfo for #name {
                 fn get_field(
                     name: &::std::primitive::str,
-                    context: &::marrow_typeinfo::Context,
+                    context: ::marrow_typeinfo::ContextRef<'_>,
                 ) -> ::std::result::Result<
                     ::marrow::datatypes::Field,
                     ::marrow_typeinfo::Error,
