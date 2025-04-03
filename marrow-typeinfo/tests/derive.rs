@@ -114,3 +114,59 @@ fn fieldless_union() {
         ))
     );
 }
+
+#[test]
+fn new_type_enum() {
+    #[derive(TypeInfo)]
+    #[allow(dead_code)]
+    enum Enum {
+        Struct(Struct),
+        Int64(i64),
+    }
+
+    #[derive(TypeInfo)]
+    struct Struct {
+        a: bool,
+        b: (),
+    }
+
+    assert_eq!(
+        Context::default().get_data_type::<Enum>(),
+        Ok(DataType::Union(
+            vec![
+                (
+                    0,
+                    Field {
+                        name: String::from("Struct"),
+                        data_type: DataType::Struct(vec![
+                            Field {
+                                name: String::from("a"),
+                                data_type: DataType::Boolean,
+                                nullable: false,
+                                metadata: Default::default(),
+                            },
+                            Field {
+                                name: String::from("b"),
+                                data_type: DataType::Null,
+                                nullable: true,
+                                metadata: Default::default(),
+                            },
+                        ]),
+                        nullable: false,
+                        metadata: Default::default(),
+                    }
+                ),
+                (
+                    1,
+                    Field {
+                        name: String::from("Int64"),
+                        data_type: DataType::Int64,
+                        nullable: false,
+                        metadata: Default::default(),
+                    }
+                ),
+            ],
+            UnionMode::Dense
+        ))
+    );
+}

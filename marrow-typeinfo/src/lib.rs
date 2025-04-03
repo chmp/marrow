@@ -132,7 +132,6 @@ macro_rules! define_primitive {
 }
 
 define_primitive!(
-    ((), DataType::Null),
     (bool, DataType::Boolean),
     (u8, DataType::UInt8),
     (u16, DataType::UInt16),
@@ -146,6 +145,18 @@ define_primitive!(
     (f32, DataType::Float32),
     (f64, DataType::Float64),
 );
+
+impl TypeInfo for () {
+    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
+        let _ = context;
+        Ok(Field {
+            name: name.to_owned(),
+            data_type: DataType::Null,
+            nullable: true,
+            metadata: Default::default(),
+        })
+    }
+}
 
 fn get_default_string_type(context: &Context) -> DataType {
     if let Some(DefaultStringType(ty)) = context.get() {
