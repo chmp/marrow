@@ -168,20 +168,15 @@ struct LargeList(bool);
 /// The functions cannot be called directly. First construct a [Context], then call the
 /// corresponding methods.
 pub trait TypeInfo {
-    /// See [Context::get_field]
-    fn get_field(context: Context<'_>) -> Result<Field, Error>;
-
-    /// See [Context::get_data_type]
-    fn get_data_type(context: Context<'_>) -> Result<DataType, Error> {
-        Ok(Self::get_field(context)?.data_type)
-    }
+    /// See [crate::get_field]
+    fn get_field(context: Context<'_>) -> Result<Field>;
 }
 
 macro_rules! define_primitive {
     ($(($ty:ty, $dt:expr),)*) => {
         $(
             impl TypeInfo for $ty {
-                fn get_field(context: Context<'_>) -> Result<Field, Error> {
+                fn get_field(context: Context<'_>) -> Result<Field> {
                     Ok(Field {
                         name: context.get_name().to_owned(),
                         data_type: $dt,
@@ -208,8 +203,20 @@ define_primitive!(
     (f64, DataType::Float64),
 );
 
+impl<T: TypeInfo> TypeInfo for &T {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        T::get_field(context)
+    }
+}
+
+impl<T: TypeInfo> TypeInfo for &mut T {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        T::get_field(context)
+    }
+}
+
 impl TypeInfo for () {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
         let _ = context;
         Ok(Field {
             name: context.get_name().to_owned(),
@@ -239,7 +246,7 @@ fn new_string_field(context: Context<'_>) -> Field {
 }
 
 impl TypeInfo for &str {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(new_string_field(context))
     }
 }
@@ -336,6 +343,49 @@ impl<K: TypeInfo, V: TypeInfo> TypeInfo for HashMap<K, V> {
         ))
     }
 }
+
+macro_rules! impl_tuples {
+    ($( ( $($name:ident,)* ), )*) => {
+        $(
+            impl<$($name: TypeInfo),*> TypeInfo for ( $($name,)* ) {
+                #[allow(unused_assignments)]
+                fn get_field(context: Context<'_>) -> Result<Field> {
+                    let mut idx = 0;
+                    let mut fields = Vec::new();
+                    $(
+                        fields.push(context.get_field::<$name>(&idx.to_string())?);
+                        idx += 1;
+                    )*
+
+                    Ok(Field {
+                        name: context.get_name().to_owned(),
+                        data_type: DataType::Struct(fields),
+                        ..Field::default()
+                    })
+                }
+            }
+        )*
+    };
+}
+
+impl_tuples!(
+    (A,),
+    (A, B,),
+    (A, B, C,),
+    (A, B, C, D,),
+    (A, B, C, D, E,),
+    (A, B, C, D, E, F,),
+    (A, B, C, D, E, F, G,),
+    (A, B, C, D, E, F, G, H,),
+    (A, B, C, D, E, F, G, H, I,),
+    (A, B, C, D, E, F, G, H, I, J,),
+    (A, B, C, D, E, F, G, H, I, J, K,),
+    (A, B, C, D, E, F, G, H, I, J, K, L,),
+    (A, B, C, D, E, F, G, H, I, J, K, L, M,),
+    (A, B, C, D, E, F, G, H, I, J, K, L, M, N,),
+    (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O,),
+    (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,),
+);
 
 #[test]
 fn examples() {
