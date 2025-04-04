@@ -1,28 +1,22 @@
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
-    Attribute, Data, DeriveInput, Expr, Fields, FieldsNamed, Ident, Lit, Meta, Token, Variant,
-    parse_macro_input, punctuated::Punctuated, token::Comma,
+    Attribute, Data, DataEnum, DataStruct, DeriveInput, Expr, Field, Fields, Ident, Lit, LitStr,
+    Meta, Token, parse_macro_input, punctuated::Punctuated, spanned::Spanned,
 };
 
 #[proc_macro_derive(TypeInfo, attributes(marrow_type_info))]
 pub fn array_builder(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
+    if !input.generics.params.is_empty() {
+        panic!("Deriving TypeInfo for generic is not supported")
+    }
+
     let expanded = match input.data {
-        Data::Struct(data) => match &data.fields {
-            Fields::Named(fields) => derive_for_struct(&input.ident, fields),
-            Fields::Unnamed(_) => {
-                panic!("Deriving TypeInfo for tuple structs is not yet supported")
-            }
-            Fields::Unit => {
-                panic!("Deriving TypeInfo for unit structs is not yet supported")
-            }
-        },
-        Data::Enum(data) => derive_for_enum(&input.ident, &data.variants),
-        Data::Union(_) => {
-            panic!("Deriving TypeInfo for unions is currently not supported")
-        }
+        Data::Struct(data) => derive_for_struct(&input.ident, &data),
+        Data::Enum(data) => derive_for_enum(&input.ident, &data),
+        Data::Union(_) => panic!("Deriving TypeInfo for unions is not supported"),
     };
 
     TokenStream::from(expanded)
@@ -111,25 +105,47 @@ impl VariantArgs {
     }
 }
 
-fn derive_for_struct(name: &Ident, fields: &FieldsNamed) -> proc_macro2::TokenStream {
-    let mut field_exprs = Vec::new();
-
-    for field in &fields.named {
-        let field_name = field.ident.as_ref().expect("named filed without ident");
-        let ty = &field.ty;
-        let args = FieldArgs::from_attrs(&field.attrs);
-
-        if let Some(func) = args.with.as_ref() {
-            field_exprs.push(quote! {
-                // TODO: pass context, include type?
-                fields.push(#func(context.get_context(), stringify!(#field_name)));
-            });
-        } else {
-            field_exprs.push(quote! {
-                fields.push(context.get_context().get_field::<#ty>(stringify!(#field_name))?);
-            })
+fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStream {
+    let fields = get_fields(&data.fields);
+    let body = match fields.as_slice() {
+        [] => panic!(),
+        [(NameSource::Index, _, field)] => {
+            // TODO: ensure no args
+            let field_ty = &field.ty;
+            quote! { context.get_context().get_field::<#field_ty>(name) }
         }
-    }
+        fields => {
+            let mut field_exprs = Vec::new();
+
+            for (_, field_name, field) in fields {
+                let ty = &field.ty;
+                let args = FieldArgs::from_attrs(&field.attrs);
+
+                if let Some(func) = args.with.as_ref() {
+                    field_exprs.push(quote! {
+                        // TODO: pass context, include type?
+                        fields.push(#func::<#ty>(context.get_context(), #field_name));
+                    });
+                } else {
+                    field_exprs.push(quote! {
+                        fields.push(context.get_context().get_field::<#ty>(#field_name)?);
+                    })
+                }
+            }
+
+            quote! {
+                let mut fields = ::std::vec::Vec::<::marrow::datatypes::Field>::new();
+                    #( #field_exprs; )*
+
+                    Ok(::marrow::datatypes::Field {
+                        name: ::std::string::String::from(name),
+                        data_type: ::marrow::datatypes::DataType::Struct(fields),
+                        nullable: false,
+                        metadata: ::std::default::Default::default(),
+                    })
+            }
+        }
+    };
 
     quote! {
         const _: ()  = {
@@ -141,28 +157,17 @@ fn derive_for_struct(name: &Ident, fields: &FieldsNamed) -> proc_macro2::TokenSt
                     ::marrow::datatypes::Field,
                     ::marrow_typeinfo::Error,
                 > {
-                    let mut fields = ::std::vec::Vec::<::marrow::datatypes::Field>::new();
-                    #( #field_exprs; )*
-
-                    Ok(::marrow::datatypes::Field {
-                        name: ::std::string::String::from(name),
-                        data_type: ::marrow::datatypes::DataType::Struct(fields),
-                        nullable: false,
-                        metadata: ::std::default::Default::default(),
-                    })
+                    #body
                 }
             }
         };
     }
 }
 
-fn derive_for_enum(
-    name: &Ident,
-    variants: &Punctuated<Variant, Comma>,
-) -> proc_macro2::TokenStream {
+fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
     let mut variant_exprs = Vec::new();
 
-    for (idx, variant) in variants.iter().enumerate() {
+    for (idx, variant) in data.variants.iter().enumerate() {
         let variant_name = &variant.ident;
         let variant_args = VariantArgs::from_attrs(&variant.attrs);
 
@@ -171,29 +176,43 @@ fn derive_for_enum(
             continue;
         }
 
-        match &variant.fields {
-            Fields::Unit => {
+        let variant_idx = i8::try_from(idx).unwrap();
+
+        let fields = get_fields(&variant.fields);
+        match fields.as_slice() {
+            [] => {
                 variant_exprs.push(quote! {
-                    variants.push((i8::try_from(#idx)?, ::marrow::datatypes::Field {
+                    (#variant_idx, ::marrow::datatypes::Field {
                         name: ::std::string::String::from(stringify!(#variant_name)),
                         data_type: ::marrow::datatypes::DataType::Null,
                         nullable: true,
                         metadata: ::std::default::Default::default(),
-                    }));
+                    })
                 });
             }
-            Fields::Unnamed(fields) if fields.unnamed.len() == 1 => {
-                let Some(field) = fields.unnamed.first() else {
-                    unreachable!("checked in guard that exactly 1 field is available");
-                };
-
+            [(NameSource::Index, _, field)] => {
                 let field_ty = &field.ty;
                 variant_exprs.push(quote! {
-                    variants.push((i8::try_from(#idx)?, context.get_context().get_field::<#field_ty>(stringify!(#variant_name))?));
+                    (#variant_idx, context.get_context().get_field::<#field_ty>(stringify!(#variant_name))?)
                 });
             }
-            Fields::Unnamed(_) => panic!("enums with unnamed fields are currently supported"),
-            Fields::Named(_) => panic!("enums with named fields are currently supported"),
+            fields => {
+                let mut field_exprs = Vec::new();
+                for (_, field_name, field) in fields {
+                    let field_ty = &field.ty;
+                    field_exprs.push(quote! {
+                        context.get_context().get_field::<#field_ty>(#field_name)?
+                    });
+                }
+                variant_exprs.push(quote! {
+                    (#variant_idx, ::marrow::datatypes::Field {
+                        name: ::std::string::String::from(stringify!(#variant_name)),
+                        data_type: ::marrow::datatypes::DataType::Struct(vec![#(#field_exprs),*]),
+                        nullable: false,
+                        metadata: ::std::default::Default::default(),
+                    })
+                });
+            }
         }
     }
 
@@ -208,7 +227,7 @@ fn derive_for_enum(
                     ::marrow_typeinfo::Error,
                 > {
                     let mut variants = ::std::vec::Vec::<(::std::primitive::i8, ::marrow::datatypes::Field)>::new();
-                    #( #variant_exprs; )*
+                    #( variants.push(#variant_exprs); )*
 
                     Ok(::marrow::datatypes::Field {
                         name: ::std::string::String::from(name),
@@ -220,4 +239,33 @@ fn derive_for_enum(
             }
         };
     }
+}
+
+fn get_fields(fields: &Fields) -> Vec<(NameSource, LitStr, &Field)> {
+    let mut result = Vec::new();
+    match fields {
+        Fields::Unit => {}
+        Fields::Named(fields) => {
+            for field in &fields.named {
+                let Some(name) = field.ident.as_ref() else {
+                    unreachable!("Named field must have a name");
+                };
+                let name = LitStr::new(&name.to_string(), name.span());
+                result.push((NameSource::Ident, name, field));
+            }
+        }
+        Fields::Unnamed(fields) => {
+            for (idx, field) in fields.unnamed.iter().enumerate() {
+                let name = LitStr::new(&idx.to_string(), field.span());
+                result.push((NameSource::Index, name, field));
+            }
+        }
+    }
+    result
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum NameSource {
+    Ident,
+    Index,
 }

@@ -37,7 +37,7 @@ impl std::default::Default for Field {
         Self {
             data_type: DataType::Null,
             name: Default::default(),
-            nullable: Default::default(),
+            nullable: false,
             metadata: Default::default(),
         }
     }
