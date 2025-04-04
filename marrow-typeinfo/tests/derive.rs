@@ -2,7 +2,7 @@ use marrow::{
     datatypes::{DataType, Field, TimeUnit, UnionMode},
     types::f16,
 };
-use marrow_typeinfo::{Context, TypeInfo};
+use marrow_typeinfo::{Context, Options, Result, TypeInfo};
 
 #[test]
 fn example() {
@@ -14,7 +14,7 @@ fn example() {
     }
 
     assert_eq!(
-        Context::default().get_data_type::<S>(),
+        marrow_typeinfo::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -33,13 +33,47 @@ fn example() {
 }
 
 #[test]
+fn overwrites() {
+    #[derive(TypeInfo)]
+    #[allow(dead_code)]
+    struct S {
+        a: i64,
+        b: [u8; 4],
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<S>(&Options::default().overwrite(
+            "$.b",
+            Field {
+                data_type: DataType::Binary,
+                ..Field::default()
+            }
+        )),
+        Ok(DataType::Struct(vec![
+            Field {
+                name: String::from("a"),
+                data_type: DataType::Int64,
+                nullable: false,
+                metadata: Default::default(),
+            },
+            Field {
+                name: String::from("b"),
+                data_type: DataType::Binary,
+                nullable: false,
+                metadata: Default::default(),
+            }
+        ]))
+    );
+}
+
+#[test]
 fn newtype() {
     #[derive(TypeInfo)]
     #[allow(dead_code)]
     struct S(f16);
 
     assert_eq!(
-        Context::default().get_data_type::<S>(),
+        marrow_typeinfo::get_data_type::<S>(&Options::default()),
         Ok(DataType::Float16)
     );
 }
@@ -51,7 +85,7 @@ fn tuple() {
     struct S(u8, [u8; 4]);
 
     assert_eq!(
-        Context::default().get_data_type::<S>(),
+        marrow_typeinfo::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("0"),
@@ -77,17 +111,17 @@ fn customize() {
         b: [u8; 4],
     }
 
-    fn timestamp_field<T>(_: &Context, name: &str) -> Field {
-        Field {
-            name: String::from(name),
+    fn timestamp_field<T>(context: Context<'_>) -> Result<Field> {
+        Ok(Field {
+            name: String::from(context.get_name()),
             data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
             nullable: false,
             metadata: Default::default(),
-        }
+        })
     }
 
     assert_eq!(
-        Context::default().get_data_type::<S>(),
+        marrow_typeinfo::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -116,7 +150,7 @@ fn fieldless_union() {
     }
 
     assert_eq!(
-        Context::default().get_data_type::<E>(),
+        marrow_typeinfo::get_data_type::<E>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -169,7 +203,7 @@ fn new_type_enum() {
     }
 
     assert_eq!(
-        Context::default().get_data_type::<Enum>(),
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -219,7 +253,7 @@ fn new_tuple_enum() {
     }
 
     assert_eq!(
-        Context::default().get_data_type::<Enum>(),
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -265,7 +299,7 @@ fn new_struct_enum() {
     }
 
     assert_eq!(
-        Context::default().get_data_type::<Enum>(),
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (

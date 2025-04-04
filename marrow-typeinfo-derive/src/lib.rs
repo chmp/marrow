@@ -112,7 +112,7 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
         [(NameSource::Index, _, field)] => {
             // TODO: ensure no args
             let field_ty = &field.ty;
-            quote! { context.get_context().get_field::<#field_ty>(name) }
+            quote! { <#field_ty>::get_field(context) }
         }
         fields => {
             let mut field_exprs = Vec::new();
@@ -123,12 +123,11 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
 
                 if let Some(func) = args.with.as_ref() {
                     field_exprs.push(quote! {
-                        // TODO: pass context, include type?
-                        fields.push(#func::<#ty>(context.get_context(), #field_name));
+                        fields.push(context.nest(#field_name, #func::<#ty>)?);
                     });
                 } else {
                     field_exprs.push(quote! {
-                        fields.push(context.get_context().get_field::<#ty>(#field_name)?);
+                        fields.push(context.get_field::<#ty>(#field_name)?);
                     })
                 }
             }
@@ -138,7 +137,7 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
                     #( #field_exprs; )*
 
                     Ok(::marrow::datatypes::Field {
-                        name: ::std::string::String::from(name),
+                        name: ::std::string::String::from(context.get_name()),
                         data_type: ::marrow::datatypes::DataType::Struct(fields),
                         nullable: false,
                         metadata: ::std::default::Default::default(),
@@ -151,12 +150,8 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
         const _: ()  = {
             impl ::marrow_typeinfo::TypeInfo for #name {
                 fn get_field(
-                    name: &::std::primitive::str,
-                    context: ::marrow_typeinfo::ContextRef<'_>,
-                ) -> ::std::result::Result<
-                    ::marrow::datatypes::Field,
-                    ::marrow_typeinfo::Error,
-                > {
+                    context: ::marrow_typeinfo::Context<'_>,
+                ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
                     #body
                 }
             }
@@ -169,6 +164,7 @@ fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
 
     for (idx, variant) in data.variants.iter().enumerate() {
         let variant_name = &variant.ident;
+        let variant_name = LitStr::new(&variant_name.to_string(), variant_name.span());
         let variant_args = VariantArgs::from_attrs(&variant.attrs);
 
         if let Some(func) = variant_args.with.as_ref() {
@@ -181,19 +177,22 @@ fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
         let fields = get_fields(&variant.fields);
         match fields.as_slice() {
             [] => {
+                // use nesting to allow overwrites
                 variant_exprs.push(quote! {
-                    (#variant_idx, ::marrow::datatypes::Field {
-                        name: ::std::string::String::from(stringify!(#variant_name)),
-                        data_type: ::marrow::datatypes::DataType::Null,
-                        nullable: true,
-                        metadata: ::std::default::Default::default(),
-                    })
+                    (#variant_idx, context.nest(#variant_name, |context| {
+                        Ok(::marrow::datatypes::Field {
+                            name: ::std::string::String::from(context.get_name()),
+                            data_type: ::marrow::datatypes::DataType::Null,
+                            nullable: true,
+                            metadata: ::std::default::Default::default(),
+                        })
+                    })?)
                 });
             }
             [(NameSource::Index, _, field)] => {
                 let field_ty = &field.ty;
                 variant_exprs.push(quote! {
-                    (#variant_idx, context.get_context().get_field::<#field_ty>(stringify!(#variant_name))?)
+                    (#variant_idx, context.nest(#variant_name, <#field_ty>::get_field)?)
                 });
             }
             fields => {
@@ -201,16 +200,16 @@ fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
                 for (_, field_name, field) in fields {
                     let field_ty = &field.ty;
                     field_exprs.push(quote! {
-                        context.get_context().get_field::<#field_ty>(#field_name)?
+                        context.get_field::<#field_ty>(#field_name)?
                     });
                 }
                 variant_exprs.push(quote! {
-                    (#variant_idx, ::marrow::datatypes::Field {
-                        name: ::std::string::String::from(stringify!(#variant_name)),
+                    (#variant_idx, context.nest(#variant_name, |context| Ok(::marrow::datatypes::Field {
+                        name: ::std::string::String::from(context.get_name()),
                         data_type: ::marrow::datatypes::DataType::Struct(vec![#(#field_exprs),*]),
                         nullable: false,
                         metadata: ::std::default::Default::default(),
-                    })
+                    }))?)
                 });
             }
         }
@@ -220,17 +219,13 @@ fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
         const _: ()  = {
             impl ::marrow_typeinfo::TypeInfo for #name {
                 fn get_field(
-                    name: &::std::primitive::str,
-                    context: ::marrow_typeinfo::ContextRef<'_>,
-                ) -> ::std::result::Result<
-                    ::marrow::datatypes::Field,
-                    ::marrow_typeinfo::Error,
-                > {
+                    context: ::marrow_typeinfo::Context<'_>,
+                ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
                     let mut variants = ::std::vec::Vec::<(::std::primitive::i8, ::marrow::datatypes::Field)>::new();
                     #( variants.push(#variant_exprs); )*
 
                     Ok(::marrow::datatypes::Field {
-                        name: ::std::string::String::from(name),
+                        name: ::std::string::String::from(context.get_name()),
                         data_type: ::marrow::datatypes::DataType::Union(variants, ::marrow::datatypes::UnionMode::Dense),
                         nullable: false,
                         metadata: ::std::default::Default::default(),

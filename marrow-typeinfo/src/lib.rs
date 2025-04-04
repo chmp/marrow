@@ -17,64 +17,7 @@ use marrow::{
 /// Currently structs and enums with any type of lifetime parameters are supported.
 pub use marrow_typeinfo_derive::TypeInfo;
 
-// TODO: include the path in context to allow overwrites
-#[derive(Debug, Default, Clone)]
-pub struct Context {
-    data: HashMap<TypeId, Rc<dyn Any>>,
-}
-
-struct DefaultStringType(DataType);
-
-struct LargeList(bool);
-
-impl Context {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn set<T: Any>(&mut self, value: T) {
-        let type_id = TypeId::of::<T>();
-        self.data.insert(type_id, Rc::new(value));
-    }
-
-    pub fn get<T: Any>(&self) -> Option<&T> {
-        let key = TypeId::of::<T>();
-        let value = self.data.get(&key)?;
-        let Some(value) = value.downcast_ref() else {
-            unreachable!();
-        };
-        Some(value)
-    }
-
-    pub fn with_default_string_type(mut self, ty: DataType) -> Self {
-        // TODO: check that ty is compatible with strings
-        self.set(DefaultStringType(ty));
-        self
-    }
-
-    pub fn with_large_list(mut self, large_list: bool) -> Self {
-        self.set(LargeList(large_list));
-        self
-    }
-
-    pub fn get_field<T: TypeInfo>(&self, name: &str) -> Result<Field, Error> {
-        // TODO: allow to overwrite child fields
-        T::get_field(name, ContextRef(self))
-    }
-
-    pub fn get_data_type<T: TypeInfo>(&self) -> Result<DataType, Error> {
-        Ok(self.get_field::<T>("item")?.data_type)
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct ContextRef<'a>(&'a Context);
-
-impl<'a> ContextRef<'a> {
-    pub fn get_context(self) -> &'a Context {
-        self.0
-    }
-}
+pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, PartialEq)]
 pub struct Error(String);
@@ -99,17 +42,138 @@ impl From<TryFromIntError> for Error {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct Options {
+    data: HashMap<TypeId, Rc<dyn Any>>,
+    overwrites: HashMap<String, Field>,
+}
+
+impl Options {
+    pub fn set<T: Any>(&mut self, value: T) {
+        let type_id = TypeId::of::<T>();
+        self.data.insert(type_id, Rc::new(value));
+    }
+
+    pub fn get<T: Any>(&self) -> Option<&T> {
+        let key = TypeId::of::<T>();
+        let value = self.data.get(&key)?;
+        let Some(value) = value.downcast_ref() else {
+            unreachable!();
+        };
+        Some(value)
+    }
+
+    pub fn with_default_string_type(mut self, data_type: DataType) -> Self {
+        // TOOD: check for valid string type
+        self.set(DefaultStringType(data_type));
+        self
+    }
+
+    pub fn with_default_list_index_type(mut self, list_type: ListIndexType) -> Self {
+        self.set(LargeList(matches!(list_type, ListIndexType::Int64)));
+        self
+    }
+
+    pub fn overwrite(mut self, path: &str, field: Field) -> Self {
+        self.overwrites.insert(path.to_owned(), field);
+        self
+    }
+}
+
+pub enum ListIndexType {
+    Int32,
+    Int64,
+}
+
+impl TryFrom<DataType> for ListIndexType {
+    type Error = Error;
+
+    fn try_from(value: DataType) -> std::result::Result<Self, Self::Error> {
+        match value {
+            DataType::Int32 => Ok(Self::Int32),
+            DataType::Int64 => Ok(Self::Int64),
+            dt => Err(Error(format!(
+                "Cannot interpretr {dt:?} as a ListIndexType"
+            ))),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Context<'a> {
+    path: &'a str,
+    name: &'a str,
+    options: &'a Options,
+}
+
+impl<'a> Context<'a> {
+    pub fn get_name(&self) -> &str {
+        self.name
+    }
+
+    pub fn get_path(&self) -> &str {
+        self.path
+    }
+
+    pub fn get_options(&self) -> &Options {
+        self.options
+    }
+
+    pub fn get_field<T: TypeInfo>(&self, name: &str) -> Result<Field> {
+        self.nest(name, T::get_field)
+    }
+
+    pub fn nest<F: FnOnce(Context<'_>) -> Result<Field>>(
+        &self,
+        name: &str,
+        scope: F,
+    ) -> Result<Field> {
+        let path = format!("{}.{}", self.path, name);
+
+        if let Some(overwrite) = self.options.overwrites.get(&path) {
+            let mut overwrite = overwrite.clone();
+            overwrite.name = String::from(name);
+            return Ok(overwrite);
+        }
+
+        let child_context = Context {
+            path: &path,
+            name,
+            options: self.options,
+        };
+
+        scope(child_context)
+    }
+}
+
+pub fn get_field<T: TypeInfo>(name: &str, options: &Options) -> Result<Field> {
+    let context = Context {
+        path: "$",
+        name,
+        options,
+    };
+    T::get_field(context)
+}
+
+pub fn get_data_type<T: TypeInfo>(options: &Options) -> Result<DataType> {
+    Ok(get_field::<T>("item", options)?.data_type)
+}
+
+struct DefaultStringType(DataType);
+
+struct LargeList(bool);
+
 /// Get the Arrow type information for a given Rust type
 ///
 /// The functions cannot be called directly. First construct a [Context], then call the
 /// corresponding methods.
 pub trait TypeInfo {
     /// See [Context::get_field]
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error>;
+    fn get_field(context: Context<'_>) -> Result<Field, Error>;
 
     /// See [Context::get_data_type]
-    fn get_data_type(context: ContextRef<'_>) -> Result<DataType, Error> {
-        Ok(Self::get_field("item", context)?.data_type)
+    fn get_data_type(context: Context<'_>) -> Result<DataType, Error> {
+        Ok(Self::get_field(context)?.data_type)
     }
 }
 
@@ -117,13 +181,11 @@ macro_rules! define_primitive {
     ($(($ty:ty, $dt:expr),)*) => {
         $(
             impl TypeInfo for $ty {
-                fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-                    let _ = context;
+                fn get_field(context: Context<'_>) -> Result<Field, Error> {
                     Ok(Field {
-                        name: name.to_owned(),
+                        name: context.get_name().to_owned(),
                         data_type: $dt,
-                        nullable: false,
-                        metadata: Default::default(),
+                        ..Field::default()
                     })
                 }
             }
@@ -147,22 +209,14 @@ define_primitive!(
 );
 
 impl TypeInfo for () {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
         let _ = context;
         Ok(Field {
-            name: name.to_owned(),
+            name: context.get_name().to_owned(),
             data_type: DataType::Null,
             nullable: true,
             metadata: Default::default(),
         })
-    }
-}
-
-fn get_default_string_type(context: &Context) -> DataType {
-    if let Some(DefaultStringType(ty)) = context.get() {
-        ty.clone()
-    } else {
-        DataType::LargeUtf8
     }
 }
 
@@ -175,45 +229,42 @@ fn new_field(name: &str, data_type: DataType) -> Field {
     }
 }
 
+fn new_string_field(context: Context<'_>) -> Field {
+    let ty = if let Some(DefaultStringType(ty)) = context.get_options().get() {
+        ty.clone()
+    } else {
+        DataType::LargeUtf8
+    };
+    new_field(context.get_name(), ty)
+}
+
 impl TypeInfo for &str {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        Ok(new_field(
-            name,
-            get_default_string_type(context.get_context()),
-        ))
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        Ok(new_string_field(context))
     }
 }
 
 impl TypeInfo for String {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        Ok(new_field(
-            name,
-            get_default_string_type(context.get_context()),
-        ))
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        Ok(new_string_field(context))
     }
 }
 
 impl TypeInfo for Box<str> {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        Ok(new_field(
-            name,
-            get_default_string_type(context.get_context()),
-        ))
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        Ok(new_string_field(context))
     }
 }
 
 impl TypeInfo for Arc<str> {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        Ok(new_field(
-            name,
-            get_default_string_type(context.get_context()),
-        ))
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        Ok(new_string_field(context))
     }
 }
 
 impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        let base_field = context.get_context().get_field::<T>("element")?;
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        let base_field = context.get_field::<T>("element")?;
         let n = i32::try_from(N)?;
 
         // TODO: allow to customize
@@ -224,7 +275,7 @@ impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
         };
 
         Ok(Field {
-            name: name.to_owned(),
+            name: context.get_name().to_owned(),
             data_type,
             nullable: false,
             metadata: Default::default(),
@@ -232,17 +283,17 @@ impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
     }
 }
 
-fn get_list_field<T: TypeInfo>(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-    let larget_list = if let Some(LargeList(large_list)) = context.get_context().get() {
+fn new_list_field<T: TypeInfo>(context: Context<'_>) -> Result<Field, Error> {
+    let larget_list = if let Some(LargeList(large_list)) = context.get_options().get() {
         *large_list
     } else {
         false
     };
 
-    let base_field = context.get_context().get_field::<T>("element")?;
+    let base_field = context.get_field::<T>("element")?;
 
     Ok(Field {
-        name: name.to_owned(),
+        name: context.get_name().to_owned(),
         data_type: if larget_list {
             DataType::LargeList(Box::new(base_field))
         } else {
@@ -254,40 +305,46 @@ fn get_list_field<T: TypeInfo>(name: &str, context: ContextRef<'_>) -> Result<Fi
 }
 
 impl<T: TypeInfo> TypeInfo for Vec<T> {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        get_list_field::<T>(name, context)
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        new_list_field::<T>(context)
     }
 }
 
 impl<T: TypeInfo> TypeInfo for &[T] {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        get_list_field::<T>(name, context)
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        new_list_field::<T>(context)
     }
 }
 
 impl<T: TypeInfo> TypeInfo for Option<T> {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        let mut base_field = T::get_field(name, context)?;
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        let mut base_field = T::get_field(context)?;
         base_field.nullable = true;
         Ok(base_field)
     }
 }
 
 impl<K: TypeInfo, V: TypeInfo> TypeInfo for HashMap<K, V> {
-    fn get_field(name: &str, context: ContextRef<'_>) -> Result<Field, Error> {
-        let key_field = context.get_context().get_field::<K>("key")?;
-        let value_field = context.get_context().get_field::<V>("value")?;
+    fn get_field(context: Context<'_>) -> Result<Field, Error> {
+        let key_field = context.get_field::<K>("key")?;
+        let value_field = context.get_field::<V>("value")?;
         let entry_field = new_field("entry", DataType::Struct(vec![key_field, value_field]));
 
-        Ok(new_field(name, DataType::Map(Box::new(entry_field), false)))
+        Ok(new_field(
+            context.get_name(),
+            DataType::Map(Box::new(entry_field), false),
+        ))
     }
 }
 
 #[test]
 fn examples() {
-    assert_eq!(Context::new().get_data_type::<i64>(), Ok(DataType::Int64));
     assert_eq!(
-        Context::new().get_data_type::<[u8; 8]>(),
+        get_data_type::<i64>(&Options::default()),
+        Ok(DataType::Int64)
+    );
+    assert_eq!(
+        get_data_type::<[u8; 8]>(&Options::default()),
         Ok(DataType::FixedSizeBinary(8))
     );
 }
