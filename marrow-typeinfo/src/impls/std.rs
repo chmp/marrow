@@ -1,6 +1,6 @@
 use std::{
     num::NonZero,
-    ops::Range,
+    ops::{Bound, Range, RangeFrom, RangeInclusive, RangeTo, RangeToInclusive},
     sync::atomic::{
         AtomicBool, AtomicI8, AtomicI16, AtomicI32, AtomicI64, AtomicU8, AtomicU16, AtomicU32,
         AtomicU64,
@@ -47,6 +47,52 @@ impl<T: TypeInfo, E: TypeInfo> TypeInfo for Result<T, E> {
 impl<T: TypeInfo> TypeInfo for Range<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         <[T; 2]>::get_field(context)
+    }
+}
+
+/// Map a `RangeInclusive` to an Arrow `FixedSizeList(.., 2)`
+impl<T: TypeInfo> TypeInfo for RangeInclusive<T> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        <[T; 2]>::get_field(context)
+    }
+}
+
+/// Map a `RangeTo` to the index type
+impl<T: TypeInfo> TypeInfo for RangeTo<T> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        T::get_field(context)
+    }
+}
+
+/// Map a `RangeToInclusive` to the index type
+impl<T: TypeInfo> TypeInfo for RangeToInclusive<T> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        T::get_field(context)
+    }
+}
+
+/// Map a `RangeFrom` to the index type
+impl<T: TypeInfo> TypeInfo for RangeFrom<T> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        T::get_field(context)
+    }
+}
+
+/// Map a `Bound` to an Arrow Union with variants `Included`, `Excluded`, `Unbounded`
+impl<T: TypeInfo> TypeInfo for Bound<T> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
+        let included = context.get_field::<T>("Included")?;
+        let excluded = context.get_field::<T>("Excluded")?;
+        let unbounded = context.get_field::<()>("Unbounded")?;
+
+        Ok(Field {
+            name: String::from(context.get_name()),
+            data_type: DataType::Union(
+                vec![(0, included), (1, excluded), (2, unbounded)],
+                UnionMode::Dense,
+            ),
+            ..Default::default()
+        })
     }
 }
 
