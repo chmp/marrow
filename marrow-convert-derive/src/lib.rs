@@ -171,10 +171,10 @@ fn derive_for_struct(input: &DeriveInput, data: &DataStruct) -> proc_macro2::Tok
 
     quote! {
         const _: ()  = {
-            impl #generics_decl ::marrow_typeinfo::TypeInfo for #name #generics_use {
+            impl #generics_decl ::marrow_convert::TypeInfo for #name #generics_use {
                 fn get_field(
-                    context: ::marrow_typeinfo::Context<'_>,
-                ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
+                    context: ::marrow_convert::Context<'_>,
+                ) -> ::marrow_convert::Result<::marrow::datatypes::Field> {
                     #body
                 }
             }
@@ -255,10 +255,10 @@ fn derive_for_enum(input: &DeriveInput, data: &DataEnum) -> proc_macro2::TokenSt
 
     quote! {
         const _: ()  = {
-            impl #generics_decl ::marrow_typeinfo::TypeInfo for #name #generics_use {
+            impl #generics_decl ::marrow_convert::TypeInfo for #name #generics_use {
                 fn get_field(
-                    context: ::marrow_typeinfo::Context<'_>,
-                ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
+                    context: ::marrow_convert::Context<'_>,
+                ) -> ::marrow_convert::Result<::marrow::datatypes::Field> {
                     let mut variants = ::std::vec::Vec::<(::std::primitive::i8, ::marrow::datatypes::Field)>::new();
                     #( variants.push(#variant_exprs); )*
 

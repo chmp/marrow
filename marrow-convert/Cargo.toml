@@ -1,11 +1,11 @@
 [package]
-name = "marrow-typeinfo"
+name = "marrow-convert"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 marrow = { path = "../marrow", default-features = false }
-marrow-typeinfo-derive = { path = "../marrow-typeinfo-derive" }
+marrow-convert-derive = { path = "../marrow-convert-derive" }
 
 jiff = { version = "0.2", default-features = false }
 

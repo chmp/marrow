@@ -1,5 +1,5 @@
 [workspace]
-members = ["marrow", "marrow-typeinfo", "marrow-typeinfo-derive", "test_with_arrow"]
+members = ["marrow", "marrow-convert", "marrow-convert-derive", "test_with_arrow"]
 
 resolver = "2"
 

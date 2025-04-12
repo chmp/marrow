@@ -1,47 +1,12 @@
 use std::{
     any::{Any, TypeId},
     collections::HashMap,
-    convert::Infallible,
-    num::TryFromIntError,
     rc::Rc,
 };
 
 use marrow::datatypes::{DataType, Field};
 
-mod impls;
-
-#[cfg(test)]
-mod tests;
-
-/// Derive [TypeInfo] for a given type
-///
-/// Currently structs and enums with any type of lifetime parameters are supported.
-pub use marrow_typeinfo_derive::TypeInfo;
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, PartialEq)]
-pub struct Error(String);
-
-impl std::error::Error for Error {}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Error({:?})", self.0)
-    }
-}
-
-impl From<Infallible> for Error {
-    fn from(_: Infallible) -> Self {
-        unreachable!()
-    }
-}
-
-impl From<TryFromIntError> for Error {
-    fn from(value: TryFromIntError) -> Self {
-        Self(value.to_string())
-    }
-}
+use crate::{Error, Result};
 
 #[derive(Debug, Default)]
 pub struct Options {
@@ -160,9 +125,9 @@ pub fn get_data_type<T: TypeInfo>(options: &Options) -> Result<DataType> {
     Ok(get_field::<T>("item", options)?.data_type)
 }
 
-struct DefaultStringType(DataType);
+pub struct DefaultStringType(pub DataType);
 
-struct LargeList(bool);
+pub struct LargeList(pub bool);
 
 /// Get the Arrow type information for a given Rust type
 ///

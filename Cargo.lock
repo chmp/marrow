@@ -1272,19 +1272,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "marrow-typeinfo"
+name = "marrow-convert"
 version = "0.1.0"
 dependencies = [
  "bigdecimal",
  "chrono",
  "jiff",
  "marrow",
- "marrow-typeinfo-derive",
+ "marrow-convert-derive",
  "uuid",
 ]
 
 [[package]]
-name = "marrow-typeinfo-derive"
+name = "marrow-convert-derive"
 version = "0.1.0"
 dependencies = [
  "proc-macro2",

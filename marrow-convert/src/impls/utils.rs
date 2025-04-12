@@ -1,6 +1,9 @@
 use marrow::datatypes::{DataType, Field};
 
-use crate::{Context, DefaultStringType, LargeList, Result, TypeInfo};
+use crate::{
+    Context, Result, TypeInfo,
+    typeinfo::{DefaultStringType, LargeList},
+};
 
 pub fn new_field(name: &str, data_type: DataType) -> Field {
     Field {
