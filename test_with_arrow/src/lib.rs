@@ -17,6 +17,7 @@ macro_rules! define_test_module {
 }
 
 // arrow-version:insert: define_test_module!("arrow-{version}", arrow_{version}, arrow_array_{version}, arrow_schema_{version}, utils, arrays, data_types,struct_arrays, fixed_size_binary_arrays, intervals, union_arrays, views);
+define_test_module!("arrow-55", arrow_55, arrow_array_55, arrow_schema_55, utils, arrays, data_types,struct_arrays, fixed_size_binary_arrays, intervals, union_arrays, views);
 define_test_module!("arrow-54", arrow_54, arrow_array_54, arrow_schema_54, utils, arrays, data_types,struct_arrays, fixed_size_binary_arrays, intervals, union_arrays, views);
 define_test_module!("arrow-53", arrow_53, arrow_array_53, arrow_schema_53, utils, arrays, data_types,struct_arrays, fixed_size_binary_arrays, intervals, union_arrays, views);
 define_test_module!("arrow-52", arrow_52, arrow_array_52, arrow_schema_52, utils, arrays, data_types,struct_arrays, fixed_size_binary_arrays, intervals, union_arrays);
