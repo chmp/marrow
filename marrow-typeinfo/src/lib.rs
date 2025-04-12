@@ -4,15 +4,14 @@ use std::{
     convert::Infallible,
     num::TryFromIntError,
     rc::Rc,
-    sync::Arc,
 };
 
-use marrow::{
-    datatypes::{DataType, Field},
-    types::f16,
-};
+use marrow::datatypes::{DataType, Field};
 
-mod ext;
+mod impls;
+
+#[cfg(test)]
+mod tests;
 
 /// Derive [TypeInfo] for a given type
 ///
@@ -108,7 +107,7 @@ pub struct Context<'a> {
     options: &'a Options,
 }
 
-impl<'a> Context<'a> {
+impl Context<'_> {
     pub fn get_name(&self) -> &str {
         self.name
     }
@@ -172,231 +171,4 @@ struct LargeList(bool);
 pub trait TypeInfo {
     /// See [crate::get_field]
     fn get_field(context: Context<'_>) -> Result<Field>;
-}
-
-macro_rules! define_primitive {
-    ($(($ty:ty, $dt:expr),)*) => {
-        $(
-            impl TypeInfo for $ty {
-                fn get_field(context: Context<'_>) -> Result<Field> {
-                    Ok(Field {
-                        name: context.get_name().to_owned(),
-                        data_type: $dt,
-                        ..Field::default()
-                    })
-                }
-            }
-        )*
-    };
-}
-
-define_primitive!(
-    (bool, DataType::Boolean),
-    (u8, DataType::UInt8),
-    (u16, DataType::UInt16),
-    (u32, DataType::UInt32),
-    (u64, DataType::UInt64),
-    (i8, DataType::Int8),
-    (i16, DataType::Int16),
-    (i32, DataType::Int32),
-    (i64, DataType::Int64),
-    (f16, DataType::Float16),
-    (f32, DataType::Float32),
-    (f64, DataType::Float64),
-);
-
-impl<T: TypeInfo> TypeInfo for &T {
-    fn get_field(context: Context<'_>) -> Result<Field> {
-        T::get_field(context)
-    }
-}
-
-impl<T: TypeInfo> TypeInfo for &mut T {
-    fn get_field(context: Context<'_>) -> Result<Field> {
-        T::get_field(context)
-    }
-}
-
-impl TypeInfo for () {
-    fn get_field(context: Context<'_>) -> Result<Field> {
-        let _ = context;
-        Ok(Field {
-            name: context.get_name().to_owned(),
-            data_type: DataType::Null,
-            nullable: true,
-            metadata: Default::default(),
-        })
-    }
-}
-
-fn new_field(name: &str, data_type: DataType) -> Field {
-    Field {
-        name: name.to_owned(),
-        data_type,
-        nullable: false,
-        metadata: Default::default(),
-    }
-}
-
-fn new_string_field(context: Context<'_>) -> Field {
-    let ty = if let Some(DefaultStringType(ty)) = context.get_options().get() {
-        ty.clone()
-    } else {
-        DataType::LargeUtf8
-    };
-    new_field(context.get_name(), ty)
-}
-
-impl TypeInfo for &str {
-    fn get_field(context: Context<'_>) -> Result<Field> {
-        Ok(new_string_field(context))
-    }
-}
-
-impl TypeInfo for String {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        Ok(new_string_field(context))
-    }
-}
-
-impl TypeInfo for Box<str> {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        Ok(new_string_field(context))
-    }
-}
-
-impl TypeInfo for Arc<str> {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        Ok(new_string_field(context))
-    }
-}
-
-impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        let base_field = context.get_field::<T>("element")?;
-        let n = i32::try_from(N)?;
-
-        // TODO: allow to customize
-        let data_type = if matches!(base_field.data_type, DataType::UInt8) {
-            DataType::FixedSizeBinary(n)
-        } else {
-            DataType::FixedSizeList(Box::new(base_field), n)
-        };
-
-        Ok(Field {
-            name: context.get_name().to_owned(),
-            data_type,
-            nullable: false,
-            metadata: Default::default(),
-        })
-    }
-}
-
-fn new_list_field<T: TypeInfo>(context: Context<'_>) -> Result<Field, Error> {
-    let larget_list = if let Some(LargeList(large_list)) = context.get_options().get() {
-        *large_list
-    } else {
-        false
-    };
-
-    let base_field = context.get_field::<T>("element")?;
-
-    Ok(Field {
-        name: context.get_name().to_owned(),
-        data_type: if larget_list {
-            DataType::LargeList(Box::new(base_field))
-        } else {
-            DataType::List(Box::new(base_field))
-        },
-        nullable: false,
-        metadata: Default::default(),
-    })
-}
-
-impl<T: TypeInfo> TypeInfo for Vec<T> {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        new_list_field::<T>(context)
-    }
-}
-
-impl<T: TypeInfo> TypeInfo for &[T] {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        new_list_field::<T>(context)
-    }
-}
-
-impl<T: TypeInfo> TypeInfo for Option<T> {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        let mut base_field = T::get_field(context)?;
-        base_field.nullable = true;
-        Ok(base_field)
-    }
-}
-
-impl<K: TypeInfo, V: TypeInfo> TypeInfo for HashMap<K, V> {
-    fn get_field(context: Context<'_>) -> Result<Field, Error> {
-        let key_field = context.get_field::<K>("key")?;
-        let value_field = context.get_field::<V>("value")?;
-        let entry_field = new_field("entry", DataType::Struct(vec![key_field, value_field]));
-
-        Ok(new_field(
-            context.get_name(),
-            DataType::Map(Box::new(entry_field), false),
-        ))
-    }
-}
-
-macro_rules! impl_tuples {
-    ($( ( $($name:ident,)* ), )*) => {
-        $(
-            impl<$($name: TypeInfo),*> TypeInfo for ( $($name,)* ) {
-                #[allow(unused_assignments)]
-                fn get_field(context: Context<'_>) -> Result<Field> {
-                    let mut idx = 0;
-                    let mut fields = Vec::new();
-                    $(
-                        fields.push(context.get_field::<$name>(&idx.to_string())?);
-                        idx += 1;
-                    )*
-
-                    Ok(Field {
-                        name: context.get_name().to_owned(),
-                        data_type: DataType::Struct(fields),
-                        ..Field::default()
-                    })
-                }
-            }
-        )*
-    };
-}
-
-impl_tuples!(
-    (A,),
-    (A, B,),
-    (A, B, C,),
-    (A, B, C, D,),
-    (A, B, C, D, E,),
-    (A, B, C, D, E, F,),
-    (A, B, C, D, E, F, G,),
-    (A, B, C, D, E, F, G, H,),
-    (A, B, C, D, E, F, G, H, I,),
-    (A, B, C, D, E, F, G, H, I, J,),
-    (A, B, C, D, E, F, G, H, I, J, K,),
-    (A, B, C, D, E, F, G, H, I, J, K, L,),
-    (A, B, C, D, E, F, G, H, I, J, K, L, M,),
-    (A, B, C, D, E, F, G, H, I, J, K, L, M, N,),
-    (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O,),
-    (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P,),
-);
-
-#[test]
-fn examples() {
-    assert_eq!(
-        get_data_type::<i64>(&Options::default()),
-        Ok(DataType::Int64)
-    );
-    assert_eq!(
-        get_data_type::<[u8; 8]>(&Options::default()),
-        Ok(DataType::FixedSizeBinary(8))
-    );
 }
