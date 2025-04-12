@@ -2,6 +2,11 @@
 #![cfg_attr(any(), rustfmt::skip)]
 
 // arrow-version:insert: #[cfg(feature = "arrow-{version}")]{\n}mod arrow_{version} {{{\n}    use {{arrow_array_{version} as arrow_array, arrow_buffer_{version} as arrow_buffer, arrow_data_{version} as arrow_data, arrow_schema_{version} as arrow_schema}};{\n}    include!("impl_api_53.rs");{\n}}}
+#[cfg(feature = "arrow-55")]
+mod arrow_55 {
+    use {arrow_array_55 as arrow_array, arrow_buffer_55 as arrow_buffer, arrow_data_55 as arrow_data, arrow_schema_55 as arrow_schema};
+    include!("impl_api_53.rs");
+}
 #[cfg(feature = "arrow-54")]
 mod arrow_54 {
     use {arrow_array_54 as arrow_array, arrow_buffer_54 as arrow_buffer, arrow_data_54 as arrow_data, arrow_schema_54 as arrow_schema};

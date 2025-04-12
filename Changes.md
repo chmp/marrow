@@ -1,5 +1,9 @@
 # Change log
 
+## 0.2.3
+
+- Add `arrow=55` support
+
 ## 0.2.2
 
 - Add helpers to work with bit arrays

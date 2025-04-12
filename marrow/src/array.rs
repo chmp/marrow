@@ -79,11 +79,12 @@ pub enum Array {
     ///
     /// Interval arrays are not supported for `arrow2`.
     MonthDayNanoInterval(PrimitiveArray<MonthDayNanoInterval>),
-    /// A `[u8]` array with `i32` offsets of strings
+    /// A `[u8]` array with `i32` offsets interpreted as strings
     Utf8(BytesArray<i32>),
-    /// A `[u8]` array with `i64` offsets of strings
+    /// A `[u8]` array with `i64` offsets interpreted as strings
     LargeUtf8(BytesArray<i64>),
-    /// TODO
+    /// A `[u8]` array interpreted as strings with support for small inlined slices and references
+    /// to external buffers
     Utf8View(BytesViewArray),
     /// A `[u8]` array with `i32` offsets
     Binary(BytesArray<i32>),
@@ -91,7 +92,7 @@ pub enum Array {
     LargeBinary(BytesArray<i64>),
     /// A `[u8; N]` array with `i32` offsets
     FixedSizeBinary(FixedSizeBinaryArray),
-    /// TODO
+    /// A `[u8]` array with support for small inlined slices and references to external buffers
     BinaryView(BytesViewArray),
     /// An `i128` array of decimals
     Decimal128(DecimalArray<i128>),
