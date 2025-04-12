@@ -19,14 +19,12 @@ fn example() {
             Field {
                 name: String::from("a"),
                 data_type: DataType::Int64,
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             },
             Field {
                 name: String::from("b"),
                 data_type: DataType::FixedSizeBinary(4),
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             }
         ]))
     );
@@ -53,14 +51,12 @@ fn overwrites() {
             Field {
                 name: String::from("a"),
                 data_type: DataType::Int64,
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             },
             Field {
                 name: String::from("b"),
                 data_type: DataType::Binary,
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             }
         ]))
     );
@@ -115,8 +111,7 @@ fn customize() {
         Ok(Field {
             name: String::from(context.get_name()),
             data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-            nullable: false,
-            metadata: Default::default(),
+            ..Default::default()
         })
     }
 
@@ -126,14 +121,12 @@ fn customize() {
             Field {
                 name: String::from("a"),
                 data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             },
             Field {
                 name: String::from("b"),
                 data_type: DataType::FixedSizeBinary(4),
-                nullable: false,
-                metadata: Default::default(),
+                ..Default::default()
             }
         ]))
     );
@@ -214,14 +207,13 @@ fn new_type_enum() {
                             Field {
                                 name: String::from("a"),
                                 data_type: DataType::Boolean,
-                                nullable: false,
-                                metadata: Default::default(),
+                                ..Default::default()
                             },
                             Field {
                                 name: String::from("b"),
                                 data_type: DataType::Null,
                                 nullable: true,
-                                metadata: Default::default(),
+                                ..Default::default()
                             },
                         ]),
                         nullable: false,
@@ -233,8 +225,7 @@ fn new_type_enum() {
                     Field {
                         name: String::from("Int64"),
                         data_type: DataType::Int64,
-                        nullable: false,
-                        metadata: Default::default(),
+                        ..Default::default()
                     }
                 ),
             ],
@@ -327,6 +318,239 @@ fn new_struct_enum() {
                             },
                         ]),
                         ..Field::default()
+                    }
+                ),
+            ],
+            UnionMode::Dense
+        ))
+    );
+}
+
+#[test]
+fn const_generics() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    struct Struct<const N: usize> {
+        data: [u8; N],
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Struct<4>>(&Options::default()),
+        Ok(DataType::Struct(vec![Field {
+            name: String::from("data"),
+            data_type: DataType::FixedSizeBinary(4),
+            nullable: false,
+            metadata: Default::default(),
+        },]))
+    );
+}
+
+#[test]
+fn liftime_generics() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    struct Struct<'a, 'b> {
+        a: &'a u8,
+        b: &'b u16,
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Struct>(&Options::default()),
+        Ok(DataType::Struct(vec![
+            Field {
+                name: String::from("a"),
+                data_type: DataType::UInt8,
+                ..Default::default()
+            },
+            Field {
+                name: String::from("b"),
+                data_type: DataType::UInt16,
+                ..Default::default()
+            },
+        ]))
+    );
+}
+
+#[test]
+fn liftime_generics_with_bounds() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    struct Struct<'a, 'b: 'a> {
+        a: &'a u8,
+        b: &'b u16,
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Struct>(&Options::default()),
+        Ok(DataType::Struct(vec![
+            Field {
+                name: String::from("a"),
+                data_type: DataType::UInt8,
+                ..Default::default()
+            },
+            Field {
+                name: String::from("b"),
+                data_type: DataType::UInt16,
+                ..Default::default()
+            },
+        ]))
+    );
+}
+
+#[test]
+fn liftime_generics_with_where_clause() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    struct Struct<'a, 'b>
+    where
+        'a: 'b,
+    {
+        a: &'a u8,
+        b: &'b u16,
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Struct>(&Options::default()),
+        Ok(DataType::Struct(vec![
+            Field {
+                name: String::from("a"),
+                data_type: DataType::UInt8,
+                ..Default::default()
+            },
+            Field {
+                name: String::from("b"),
+                data_type: DataType::UInt16,
+                ..Default::default()
+            },
+        ]))
+    );
+}
+
+#[test]
+fn enums_const_generics() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    enum Enum<const N: usize> {
+        Data([u8; N]),
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Enum<4>>(&Options::default()),
+        Ok(DataType::Union(
+            vec![(
+                0,
+                Field {
+                    name: String::from("Data"),
+                    data_type: DataType::FixedSizeBinary(4),
+                    nullable: false,
+                    metadata: Default::default(),
+                }
+            ),],
+            UnionMode::Dense
+        )),
+    );
+}
+
+#[test]
+fn enums_with_liftime_generics() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    enum Enum<'a, 'b> {
+        A(&'a u8),
+        B(&'b u16),
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
+        Ok(DataType::Union(
+            vec![
+                (
+                    0,
+                    Field {
+                        name: String::from("A"),
+                        data_type: DataType::UInt8,
+                        ..Default::default()
+                    }
+                ),
+                (
+                    1,
+                    Field {
+                        name: String::from("B"),
+                        data_type: DataType::UInt16,
+                        ..Default::default()
+                    }
+                ),
+            ],
+            UnionMode::Dense
+        ))
+    );
+}
+
+#[test]
+fn enum_liftime_generics_with_bounds() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    enum Enum<'a, 'b: 'a> {
+        A(&'a u8),
+        B(&'b u16),
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
+        Ok(DataType::Union(
+            vec![
+                (
+                    0,
+                    Field {
+                        name: String::from("A"),
+                        data_type: DataType::UInt8,
+                        ..Default::default()
+                    }
+                ),
+                (
+                    1,
+                    Field {
+                        name: String::from("B"),
+                        data_type: DataType::UInt16,
+                        ..Default::default()
+                    }
+                ),
+            ],
+            UnionMode::Dense
+        ))
+    );
+}
+
+#[test]
+fn enum_liftime_generics_with_where_clause() {
+    #[derive(TypeInfo)]
+    #[allow(unused)]
+    enum Enum<'a, 'b>
+    where
+        'a: 'b,
+    {
+        A(&'a u8),
+        B(&'b u16),
+    }
+
+    assert_eq!(
+        marrow_typeinfo::get_data_type::<Enum>(&Options::default()),
+        Ok(DataType::Union(
+            vec![
+                (
+                    0,
+                    Field {
+                        name: String::from("A"),
+                        data_type: DataType::UInt8,
+                        ..Default::default()
+                    }
+                ),
+                (
+                    1,
+                    Field {
+                        name: String::from("B"),
+                        data_type: DataType::UInt16,
+                        ..Default::default()
                     }
                 ),
             ],

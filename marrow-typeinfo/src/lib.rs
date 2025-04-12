@@ -12,6 +12,8 @@ use marrow::{
     types::f16,
 };
 
+mod ext;
+
 /// Derive [TypeInfo] for a given type
 ///
 /// Currently structs and enums with any type of lifetime parameters are supported.

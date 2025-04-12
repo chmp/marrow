@@ -1,25 +1,32 @@
 use proc_macro::TokenStream;
-use quote::quote;
+use quote::{ToTokens, quote};
 use syn::{
-    Attribute, Data, DataEnum, DataStruct, DeriveInput, Expr, Field, Fields, Ident, Lit, LitStr,
-    Meta, Token, parse_macro_input, punctuated::Punctuated, spanned::Spanned,
+    Attribute, Data, DataEnum, DataStruct, DeriveInput, Expr, Field, Fields, GenericParam, Ident,
+    Lit, LitStr, Meta, Token, punctuated::Punctuated, spanned::Spanned,
 };
 
 #[proc_macro_derive(TypeInfo, attributes(marrow_type_info))]
-pub fn array_builder(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
+pub fn derive_type_info(input: TokenStream) -> TokenStream {
+    derive_type_info_impl(input.into()).into()
+}
 
-    if !input.generics.params.is_empty() {
-        panic!("Deriving TypeInfo for generic is not supported")
+fn derive_type_info_impl(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+    let input: DeriveInput = syn::parse2(input).unwrap();
+
+    if input
+        .generics
+        .params
+        .iter()
+        .any(|p| matches!(p, GenericParam::Type(_)))
+    {
+        panic!("Deriving TypeInfo for generics with type parameters is not supported")
     }
 
-    let expanded = match input.data {
-        Data::Struct(data) => derive_for_struct(&input.ident, &data),
-        Data::Enum(data) => derive_for_enum(&input.ident, &data),
+    match &input.data {
+        Data::Struct(data) => derive_for_struct(&input, data),
+        Data::Enum(data) => derive_for_enum(&input, data),
         Data::Union(_) => panic!("Deriving TypeInfo for unions is not supported"),
-    };
-
-    TokenStream::from(expanded)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -105,7 +112,23 @@ impl VariantArgs {
     }
 }
 
-fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStream {
+fn derive_for_struct(input: &DeriveInput, data: &DataStruct) -> proc_macro2::TokenStream {
+    let name = &input.ident;
+
+    let generics_decl = &input.generics;
+    let generics_use = if !input.generics.params.is_empty() {
+        let generics_use = input.generics.params.iter().map(|p| match p {
+            GenericParam::Const(p) => p.ident.to_token_stream(),
+            GenericParam::Lifetime(p) => p.lifetime.to_token_stream(),
+            GenericParam::Type(_) => panic!(),
+        });
+        quote! {
+            <#(#generics_use),*>
+        }
+    } else {
+        quote! {}
+    };
+
     let fields = get_fields(&data.fields);
     let body = match fields.as_slice() {
         [] => panic!(),
@@ -148,7 +171,7 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
 
     quote! {
         const _: ()  = {
-            impl ::marrow_typeinfo::TypeInfo for #name {
+            impl #generics_decl ::marrow_typeinfo::TypeInfo for #name #generics_use {
                 fn get_field(
                     context: ::marrow_typeinfo::Context<'_>,
                 ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
@@ -159,8 +182,23 @@ fn derive_for_struct(name: &Ident, data: &DataStruct) -> proc_macro2::TokenStrea
     }
 }
 
-fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
+fn derive_for_enum(input: &DeriveInput, data: &DataEnum) -> proc_macro2::TokenStream {
     let mut variant_exprs = Vec::new();
+
+    let name = &input.ident;
+    let generics_decl = &input.generics;
+    let generics_use = if !input.generics.params.is_empty() {
+        let generics_use = input.generics.params.iter().map(|p| match p {
+            GenericParam::Const(p) => p.ident.to_token_stream(),
+            GenericParam::Lifetime(p) => p.lifetime.to_token_stream(),
+            GenericParam::Type(_) => panic!(),
+        });
+        quote! {
+            <#(#generics_use),*>
+        }
+    } else {
+        quote! {}
+    };
 
     for (idx, variant) in data.variants.iter().enumerate() {
         let variant_name = &variant.ident;
@@ -217,7 +255,7 @@ fn derive_for_enum(name: &Ident, data: &DataEnum) -> proc_macro2::TokenStream {
 
     quote! {
         const _: ()  = {
-            impl ::marrow_typeinfo::TypeInfo for #name {
+            impl #generics_decl ::marrow_typeinfo::TypeInfo for #name #generics_use {
                 fn get_field(
                     context: ::marrow_typeinfo::Context<'_>,
                 ) -> ::marrow_typeinfo::Result<::marrow::datatypes::Field> {
@@ -263,4 +301,32 @@ fn get_fields(fields: &Fields) -> Vec<(NameSource, LitStr, &Field)> {
 enum NameSource {
     Ident,
     Index,
+}
+
+#[test]
+#[should_panic(expected = "Deriving TypeInfo for generics with type parameters is not supported")]
+fn reject_unsupported() {
+    derive_type_info_impl(quote! {
+        struct Example<T> {
+            field: T,
+        }
+    });
+}
+
+#[test]
+fn lifetimes_are_supported() {
+    derive_type_info_impl(quote! {
+        struct Example<'a> {
+            field: &'a i64,
+        }
+    });
+}
+
+#[test]
+fn const_params_are_supported() {
+    derive_type_info_impl(quote! {
+        struct Example<const N: usize> {
+            field: [u8; N],
+        }
+    });
 }
