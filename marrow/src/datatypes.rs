@@ -243,6 +243,8 @@ pub enum DataType {
     /// Lists with a fixed number of element with `i32` offsets
     FixedSizeList(Box<Field>, i32),
     /// Maps
+    ///
+    /// The field should be a struct field with two children for the keys and values.
     Map(Box<Field>, bool),
     /// Deduplicated values
     ///
