@@ -7,6 +7,7 @@ arg = lambda *a, **kw: __effect(lambda d: d.setdefault("@arg", []).append((a, kw
 
 all_arrow_features = [
     # arrow-version:insert:     "arrow-{version}",
+    "arrow-55",
     "arrow-54",
     "arrow-53",
     "arrow-52",
@@ -145,7 +146,7 @@ def _workflow_check_steps():
 
 @cmd(help="Format the code")
 def format():
-    #_sh(f"{python} -m black {_q(__file__)}")
+    _sh(f"uv run --with 'ruff==0.11.5' ruff format {_q(__file__)}")
     _sh("cargo fmt")
 
     # the impl files are not found by cargo fmt
@@ -201,8 +202,8 @@ def doc(private=False, open=False):
         f"""
             cargo doc
                 --features {default_features}
-                {'--document-private-items' if private else ''}
-                {'--open' if open else ''}
+                {"--document-private-items" if private else ""}
+                {"--open" if open else ""}
         """,
     )
 

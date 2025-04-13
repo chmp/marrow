@@ -99,6 +99,7 @@
 //! | Feature       | Arrow Version |
 //! |---------------|---------------|
 // arrow-version:insert: //! | `arrow-{version}`    | `arrow={version}`    |
+//! | `arrow-55`    | `arrow=55`    |
 //! | `arrow-54`    | `arrow=54`    |
 //! | `arrow-53`    | `arrow=53`    |
 //! | `arrow-52`    | `arrow=52`    |

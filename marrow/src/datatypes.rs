@@ -214,7 +214,7 @@ pub enum DataType {
     Binary,
     /// Byte arrays stored with `i64` offsets
     LargeBinary,
-    /// Bytes stored with  Ã¬32` offsets or inline for small values
+    /// Bytes stored with `u32` offsets or inline for small values
     BinaryView,
     /// Byte arrays with fixed length
     FixedSizeBinary(i32),
@@ -243,6 +243,8 @@ pub enum DataType {
     /// Lists with a fixed number of element with `i32` offsets
     FixedSizeList(Box<Field>, i32),
     /// Maps
+    ///
+    /// The field should be a struct field with two children for the keys and values.
     Map(Box<Field>, bool),
     /// Deduplicated values
     ///

@@ -59,6 +59,10 @@
           "run": "cargo check -p marrow --features arrow2-0-16"
         },
         {
+          "name": "Check arrow-55",
+          "run": "cargo check -p marrow --features arrow-55"
+        },
+        {
           "name": "Check arrow-54",
           "run": "cargo check -p marrow --features arrow-54"
         },
