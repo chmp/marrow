@@ -1,16 +1,19 @@
 use marrow::datatypes::{DataType, Field};
 
-use crate::{Context, Result, TypeInfo};
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
 use super::utils::new_list_field;
 
-impl<T: TypeInfo> TypeInfo for [T] {
+impl<T: DefaultArrayType> DefaultArrayType for [T] {
     fn get_field(context: Context<'_>) -> Result<Field> {
         new_list_field::<T>(context)
     }
 }
 
-impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
+impl<const N: usize, T: DefaultArrayType> DefaultArrayType for [T; N] {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let base_field = context.get_field::<T>("element")?;
         let n = i32::try_from(N)?;
@@ -34,7 +37,7 @@ impl<const N: usize, T: TypeInfo> TypeInfo for [T; N] {
 macro_rules! impl_tuples {
     ($( ( $($name:ident,)* ), )*) => {
         $(
-            impl<$($name: TypeInfo),*> TypeInfo for ( $($name,)* ) {
+            impl<$($name: DefaultArrayType),*> DefaultArrayType for ( $($name,)* ) {
                 #[allow(unused_assignments, clippy::vec_init_then_push)]
                 fn get_field(context: Context<'_>) -> Result<Field> {
                     let mut idx = 0;

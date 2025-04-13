@@ -85,10 +85,11 @@ impl Context<'_> {
         self.options
     }
 
-    pub fn get_field<T: TypeInfo>(&self, name: &str) -> Result<Field> {
+    pub fn get_field<T: DefaultArrayType>(&self, name: &str) -> Result<Field> {
         self.nest(name, T::get_field)
     }
 
+    /// Call a function with a context for nested field
     pub fn nest<F: FnOnce(Context<'_>) -> Result<Field>>(
         &self,
         name: &str,
@@ -112,7 +113,7 @@ impl Context<'_> {
     }
 }
 
-pub fn get_field<T: TypeInfo>(name: &str, options: &Options) -> Result<Field> {
+pub fn get_field<T: DefaultArrayType>(name: &str, options: &Options) -> Result<Field> {
     let context = Context {
         path: "$",
         name,
@@ -121,7 +122,7 @@ pub fn get_field<T: TypeInfo>(name: &str, options: &Options) -> Result<Field> {
     T::get_field(context)
 }
 
-pub fn get_data_type<T: TypeInfo>(options: &Options) -> Result<DataType> {
+pub fn get_data_type<T: DefaultArrayType>(options: &Options) -> Result<DataType> {
     Ok(get_field::<T>("item", options)?.data_type)
 }
 
@@ -133,7 +134,7 @@ pub struct LargeList(pub bool);
 ///
 /// The functions cannot be called directly. First construct a [Context], then call the
 /// corresponding methods.
-pub trait TypeInfo {
-    /// See [crate::get_field]
+pub trait DefaultArrayType {
+    /// See [get_field]
     fn get_field(context: Context<'_>) -> Result<Field>;
 }

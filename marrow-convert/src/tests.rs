@@ -1,6 +1,6 @@
 use marrow::datatypes::DataType;
 
-use crate::{Options, get_data_type};
+use crate::types::{Options, get_data_type};
 
 #[test]
 fn examples() {

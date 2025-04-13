@@ -1,8 +1,9 @@
 use marrow::datatypes::{DataType, Field};
 
 use crate::{
-    Context, Result, TypeInfo,
-    typeinfo::{DefaultStringType, LargeList},
+    Result,
+    internal::type_info::{DefaultStringType, LargeList},
+    types::{Context, DefaultArrayType},
 };
 
 pub fn new_field(name: &str, data_type: DataType) -> Field {
@@ -23,7 +24,7 @@ pub fn new_string_field(context: Context<'_>) -> Field {
     new_field(context.get_name(), ty)
 }
 
-pub fn new_list_field<T: TypeInfo>(context: Context<'_>) -> Result<Field> {
+pub fn new_list_field<T: DefaultArrayType>(context: Context<'_>) -> Result<Field> {
     let larget_list = if let Some(LargeList(large_list)) = context.get_options().get() {
         *large_list
     } else {
@@ -44,7 +45,9 @@ pub fn new_list_field<T: TypeInfo>(context: Context<'_>) -> Result<Field> {
     })
 }
 
-pub fn new_map_field<K: TypeInfo, V: TypeInfo>(context: Context<'_>) -> Result<Field> {
+pub fn new_map_field<K: DefaultArrayType, V: DefaultArrayType>(
+    context: Context<'_>,
+) -> Result<Field> {
     let key_field = context.get_field::<K>("key")?;
     let value_field = context.get_field::<V>("value")?;
     let entry_field = new_field("entry", DataType::Struct(vec![key_field, value_field]));

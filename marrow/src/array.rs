@@ -255,6 +255,76 @@ impl Array {
             Self::Union(array) => View::Union(array.as_view()),
         }
     }
+
+    /// Extract the underlying primitive array if the array is of type Int8
+    pub fn into_int8(self) -> Result<PrimitiveArray<i8>, Array> {
+        match self {
+            Self::Int8(res) => Ok(res),
+            this => Err(this),
+        }
+    }
+
+    /// Extract the underlying primitive array if the array is of type Int32
+    pub fn into_int32(self) -> Result<PrimitiveArray<i32>, Array> {
+        match self {
+            Self::Int32(res) => Ok(res),
+            this => Err(this),
+        }
+    }
+
+    /// Extract the underlying primitive array if the array is of type Int64
+    pub fn into_int64(self) -> Result<PrimitiveArray<i64>, Array> {
+        match self {
+            Self::Int64(res) => Ok(res),
+            this => Err(this),
+        }
+    }
+
+    /// Extract the underlying arrays of a struct array
+    pub fn into_struct_fields<const N: usize>(self) -> Result<[(FieldMeta, Array); N], Array> {
+        match self {
+            Array::Struct(this) => {
+                let StructArray {
+                    len,
+                    validity,
+                    fields,
+                } = this;
+
+                match <[(FieldMeta, Array); N]>::try_from(fields) {
+                    Ok(fields) => Ok(fields),
+                    // rebuild the original array
+                    Err(fields) => Err(Array::Struct(StructArray {
+                        len,
+                        validity,
+                        fields,
+                    })),
+                }
+            }
+            this => Err(this),
+        }
+    }
+
+    /// Extract the underlying arrays of a union array
+    pub fn into_union_fields<const N: usize>(self) -> Result<[(i8, FieldMeta, Array); N], Array> {
+        match self {
+            Array::Union(this) => {
+                let UnionArray {
+                    types,
+                    offsets,
+                    fields,
+                } = this;
+                match <[(i8, FieldMeta, Array); N]>::try_from(fields) {
+                    Ok(fields) => Ok(fields),
+                    Err(fields) => Err(Array::Union(UnionArray {
+                        types,
+                        offsets,
+                        fields,
+                    })),
+                }
+            }
+            this => Err(this),
+        }
+    }
 }
 
 /// An array without data

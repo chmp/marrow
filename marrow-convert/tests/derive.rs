@@ -2,11 +2,14 @@ use marrow::{
     datatypes::{DataType, Field, TimeUnit, UnionMode},
     types::f16,
 };
-use marrow_convert::{Context, Options, Result, TypeInfo};
+use marrow_convert::{
+    Result,
+    types::{Context, DefaultArrayType, Options},
+};
 
 #[test]
 fn example() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct S {
         a: i64,
@@ -14,7 +17,7 @@ fn example() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<S>(&Options::default()),
+        marrow_convert::types::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -32,7 +35,7 @@ fn example() {
 
 #[test]
 fn overwrites() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct S {
         a: i64,
@@ -40,7 +43,7 @@ fn overwrites() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<S>(&Options::default().overwrite(
+        marrow_convert::types::get_data_type::<S>(&Options::default().overwrite(
             "$.b",
             Field {
                 data_type: DataType::Binary,
@@ -64,24 +67,24 @@ fn overwrites() {
 
 #[test]
 fn newtype() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct S(f16);
 
     assert_eq!(
-        marrow_convert::get_data_type::<S>(&Options::default()),
+        marrow_convert::types::get_data_type::<S>(&Options::default()),
         Ok(DataType::Float16)
     );
 }
 
 #[test]
 fn tuple() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct S(u8, [u8; 4]);
 
     assert_eq!(
-        marrow_convert::get_data_type::<S>(&Options::default()),
+        marrow_convert::types::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("0"),
@@ -99,10 +102,10 @@ fn tuple() {
 
 #[test]
 fn customize() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct S {
-        #[marrow_type_info(with = "timestamp_field")]
+        #[marrow(with = "timestamp_field")]
         a: i64,
         b: [u8; 4],
     }
@@ -116,7 +119,7 @@ fn customize() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<S>(&Options::default()),
+        marrow_convert::types::get_data_type::<S>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -134,7 +137,7 @@ fn customize() {
 
 #[test]
 fn fieldless_union() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     enum E {
         A,
@@ -143,7 +146,7 @@ fn fieldless_union() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<E>(&Options::default()),
+        marrow_convert::types::get_data_type::<E>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -181,14 +184,14 @@ fn fieldless_union() {
 
 #[test]
 fn new_type_enum() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     enum Enum {
         Struct(Struct),
         Int64(i64),
     }
 
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     struct Struct {
         a: bool,
@@ -196,7 +199,7 @@ fn new_type_enum() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -236,7 +239,7 @@ fn new_type_enum() {
 
 #[test]
 fn new_tuple_enum() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     enum Enum {
         Int64(i64),
@@ -244,7 +247,7 @@ fn new_tuple_enum() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -282,7 +285,7 @@ fn new_tuple_enum() {
 
 #[test]
 fn new_struct_enum() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(dead_code)]
     enum Enum {
         Int64(i64),
@@ -290,7 +293,7 @@ fn new_struct_enum() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -328,14 +331,14 @@ fn new_struct_enum() {
 
 #[test]
 fn const_generics() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     struct Struct<const N: usize> {
         data: [u8; N],
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Struct<4>>(&Options::default()),
+        marrow_convert::types::get_data_type::<Struct<4>>(&Options::default()),
         Ok(DataType::Struct(vec![Field {
             name: String::from("data"),
             data_type: DataType::FixedSizeBinary(4),
@@ -347,7 +350,7 @@ fn const_generics() {
 
 #[test]
 fn liftime_generics() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     struct Struct<'a, 'b> {
         a: &'a u8,
@@ -355,7 +358,7 @@ fn liftime_generics() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Struct>(&Options::default()),
+        marrow_convert::types::get_data_type::<Struct>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -373,7 +376,7 @@ fn liftime_generics() {
 
 #[test]
 fn liftime_generics_with_bounds() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     struct Struct<'a, 'b: 'a> {
         a: &'a u8,
@@ -381,7 +384,7 @@ fn liftime_generics_with_bounds() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Struct>(&Options::default()),
+        marrow_convert::types::get_data_type::<Struct>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -399,7 +402,7 @@ fn liftime_generics_with_bounds() {
 
 #[test]
 fn liftime_generics_with_where_clause() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     struct Struct<'a, 'b>
     where
@@ -410,7 +413,7 @@ fn liftime_generics_with_where_clause() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Struct>(&Options::default()),
+        marrow_convert::types::get_data_type::<Struct>(&Options::default()),
         Ok(DataType::Struct(vec![
             Field {
                 name: String::from("a"),
@@ -428,14 +431,14 @@ fn liftime_generics_with_where_clause() {
 
 #[test]
 fn enums_const_generics() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     enum Enum<const N: usize> {
         Data([u8; N]),
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum<4>>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum<4>>(&Options::default()),
         Ok(DataType::Union(
             vec![(
                 0,
@@ -453,7 +456,7 @@ fn enums_const_generics() {
 
 #[test]
 fn enums_with_liftime_generics() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     enum Enum<'a, 'b> {
         A(&'a u8),
@@ -461,7 +464,7 @@ fn enums_with_liftime_generics() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -488,7 +491,7 @@ fn enums_with_liftime_generics() {
 
 #[test]
 fn enum_liftime_generics_with_bounds() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     enum Enum<'a, 'b: 'a> {
         A(&'a u8),
@@ -496,7 +499,7 @@ fn enum_liftime_generics_with_bounds() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (
@@ -523,7 +526,7 @@ fn enum_liftime_generics_with_bounds() {
 
 #[test]
 fn enum_liftime_generics_with_where_clause() {
-    #[derive(TypeInfo)]
+    #[derive(DefaultArrayType)]
     #[allow(unused)]
     enum Enum<'a, 'b>
     where
@@ -534,7 +537,7 @@ fn enum_liftime_generics_with_where_clause() {
     }
 
     assert_eq!(
-        marrow_convert::get_data_type::<Enum>(&Options::default()),
+        marrow_convert::types::get_data_type::<Enum>(&Options::default()),
         Ok(DataType::Union(
             vec![
                 (

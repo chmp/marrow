@@ -3,14 +3,17 @@ use marrow::{
     types::f16,
 };
 
-use crate::{Context, Result, TypeInfo};
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
 use super::utils::new_string_field;
 
 macro_rules! define_primitive {
     ($(($ty:ty, $dt:expr),)*) => {
         $(
-            impl TypeInfo for $ty {
+            impl DefaultArrayType for $ty {
                 fn get_field(context: Context<'_>) -> Result<Field> {
                     Ok(Field {
                         name: context.get_name().to_owned(),
@@ -39,7 +42,7 @@ define_primitive!(
     (char, DataType::UInt32),
 );
 
-impl TypeInfo for () {
+impl DefaultArrayType for () {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let _ = context;
         Ok(Field {
@@ -51,19 +54,19 @@ impl TypeInfo for () {
     }
 }
 
-impl TypeInfo for str {
+impl DefaultArrayType for str {
     fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(new_string_field(context))
     }
 }
 
-impl<T: TypeInfo> TypeInfo for &T {
+impl<T: DefaultArrayType> DefaultArrayType for &T {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo> TypeInfo for &mut T {
+impl<T: DefaultArrayType> DefaultArrayType for &mut T {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }

@@ -1,9 +1,12 @@
 use marrow::datatypes::{DataType, Field};
 
-use crate::TypeInfo;
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
-impl TypeInfo for bigdecimal::BigDecimal {
-    fn get_field(context: crate::Context<'_>) -> crate::Result<marrow::datatypes::Field> {
+impl DefaultArrayType for bigdecimal::BigDecimal {
+    fn get_field(context: Context<'_>) -> Result<marrow::datatypes::Field> {
         Ok(Field {
             name: String::from(context.get_name()),
             // TODO: find better defaults

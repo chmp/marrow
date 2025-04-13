@@ -8,9 +8,12 @@ use std::{
 
 use marrow::datatypes::Field;
 
-use crate::{Context, Result, TypeInfo};
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
-impl<T: TypeInfo + ?Sized> TypeInfo for PhantomData<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for PhantomData<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let mut field = T::get_field(context)?;
         field.nullable = true;
@@ -18,49 +21,49 @@ impl<T: TypeInfo + ?Sized> TypeInfo for PhantomData<T> {
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for Box<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for Box<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for Cell<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for Cell<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for RefCell<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for RefCell<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for Mutex<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for Mutex<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for RwLock<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for RwLock<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for Rc<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for Rc<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<T: TypeInfo + ?Sized> TypeInfo for Arc<T> {
+impl<T: DefaultArrayType + ?Sized> DefaultArrayType for Arc<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
-impl<'a, T: TypeInfo + ToOwned + ?Sized + 'a> TypeInfo for Cow<'a, T> {
+impl<'a, T: DefaultArrayType + ToOwned + ?Sized + 'a> DefaultArrayType for Cow<'a, T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }

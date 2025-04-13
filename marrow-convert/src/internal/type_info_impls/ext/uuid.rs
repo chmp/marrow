@@ -2,9 +2,12 @@ use std::collections::HashMap;
 
 use marrow::datatypes::{DataType, Field};
 
-use crate::{Context, Result, TypeInfo};
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
-impl TypeInfo for uuid::Uuid {
+impl DefaultArrayType for uuid::Uuid {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let mut metadata = HashMap::new();
         metadata.insert("ARROW:extension:name".into(), "arrow.uuid".into());

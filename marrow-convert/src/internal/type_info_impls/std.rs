@@ -10,18 +10,21 @@ use std::{
 
 use marrow::datatypes::{DataType, Field, TimeUnit, UnionMode};
 
-use crate::{Context, Result, TypeInfo};
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
 use super::utils::new_string_field;
 
-impl TypeInfo for String {
+impl DefaultArrayType for String {
     fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(new_string_field(context))
     }
 }
 
 /// Map an option to a nullable field
-impl<T: TypeInfo> TypeInfo for Option<T> {
+impl<T: DefaultArrayType> DefaultArrayType for Option<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let mut base_field = T::get_field(context)?;
         base_field.nullable = true;
@@ -30,7 +33,7 @@ impl<T: TypeInfo> TypeInfo for Option<T> {
 }
 
 /// Map a `Result` to an Arrow Union with `Ok` and `Err` variants
-impl<T: TypeInfo, E: TypeInfo> TypeInfo for Result<T, E> {
+impl<T: DefaultArrayType, E: DefaultArrayType> DefaultArrayType for Result<T, E> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let ok = context.get_field::<T>("Ok")?;
         let err = context.get_field::<E>("Err")?;
@@ -44,42 +47,42 @@ impl<T: TypeInfo, E: TypeInfo> TypeInfo for Result<T, E> {
 }
 
 /// Map a `Range` to an Arrow `FixedSizeList(.., 2)`
-impl<T: TypeInfo> TypeInfo for Range<T> {
+impl<T: DefaultArrayType> DefaultArrayType for Range<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         <[T; 2]>::get_field(context)
     }
 }
 
 /// Map a `RangeInclusive` to an Arrow `FixedSizeList(.., 2)`
-impl<T: TypeInfo> TypeInfo for RangeInclusive<T> {
+impl<T: DefaultArrayType> DefaultArrayType for RangeInclusive<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         <[T; 2]>::get_field(context)
     }
 }
 
 /// Map a `RangeTo` to the index type
-impl<T: TypeInfo> TypeInfo for RangeTo<T> {
+impl<T: DefaultArrayType> DefaultArrayType for RangeTo<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
 /// Map a `RangeToInclusive` to the index type
-impl<T: TypeInfo> TypeInfo for RangeToInclusive<T> {
+impl<T: DefaultArrayType> DefaultArrayType for RangeToInclusive<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
 /// Map a `RangeFrom` to the index type
-impl<T: TypeInfo> TypeInfo for RangeFrom<T> {
+impl<T: DefaultArrayType> DefaultArrayType for RangeFrom<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         T::get_field(context)
     }
 }
 
 /// Map a `Bound` to an Arrow Union with variants `Included`, `Excluded`, `Unbounded`
-impl<T: TypeInfo> TypeInfo for Bound<T> {
+impl<T: DefaultArrayType> DefaultArrayType for Bound<T> {
     fn get_field(context: Context<'_>) -> Result<Field> {
         let included = context.get_field::<T>("Included")?;
         let excluded = context.get_field::<T>("Excluded")?;
@@ -99,7 +102,7 @@ impl<T: TypeInfo> TypeInfo for Bound<T> {
 macro_rules! impl_nonzero {
     ($($ty:ident),* $(,)?) => {
         $(
-            impl TypeInfo for NonZero<$ty> {
+            impl DefaultArrayType for NonZero<$ty> {
                 fn get_field(context: Context<'_>) -> Result<Field> {
                     <$ty>::get_field(context)
                 }
@@ -113,7 +116,7 @@ impl_nonzero!(u8, u16, u32, u64, i8, i16, i32, i64);
 macro_rules! impl_atomic {
     ($(($atomic:ident, $ty:ident)),* $(,)?) => {
         $(
-            impl TypeInfo for $atomic {
+            impl DefaultArrayType for $atomic {
                 fn get_field(context: Context<'_>) -> Result<Field> {
                     $ty::get_field(context)
                 }
@@ -134,7 +137,7 @@ impl_atomic!(
     (AtomicU64, u64),
 );
 
-impl TypeInfo for Duration {
+impl DefaultArrayType for Duration {
     fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(Field {
             name: String::from(context.get_name()),
@@ -144,7 +147,7 @@ impl TypeInfo for Duration {
     }
 }
 
-impl TypeInfo for SystemTime {
+impl DefaultArrayType for SystemTime {
     fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(Field {
             name: String::from(context.get_name()),

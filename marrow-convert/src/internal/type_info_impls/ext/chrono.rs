@@ -1,10 +1,13 @@
 use chrono::Utc;
 use marrow::datatypes::{DataType, Field, TimeUnit};
 
-use crate::TypeInfo;
+use crate::{
+    Result,
+    types::{Context, DefaultArrayType},
+};
 
-impl TypeInfo for chrono::NaiveDate {
-    fn get_field(context: crate::Context<'_>) -> crate::Result<marrow::datatypes::Field> {
+impl DefaultArrayType for chrono::NaiveDate {
+    fn get_field(context: Context<'_>) -> Result<marrow::datatypes::Field> {
         Ok(Field {
             name: String::from(context.get_name()),
             data_type: DataType::Date32,
@@ -13,8 +16,8 @@ impl TypeInfo for chrono::NaiveDate {
     }
 }
 
-impl TypeInfo for chrono::NaiveTime {
-    fn get_field(context: crate::Context<'_>) -> crate::Result<marrow::datatypes::Field> {
+impl DefaultArrayType for chrono::NaiveTime {
+    fn get_field(context: Context<'_>) -> Result<marrow::datatypes::Field> {
         Ok(Field {
             name: String::from(context.get_name()),
             data_type: DataType::Time32(TimeUnit::Millisecond),
@@ -23,8 +26,8 @@ impl TypeInfo for chrono::NaiveTime {
     }
 }
 
-impl TypeInfo for chrono::NaiveDateTime {
-    fn get_field(context: crate::Context<'_>) -> crate::Result<marrow::datatypes::Field> {
+impl DefaultArrayType for chrono::NaiveDateTime {
+    fn get_field(context: Context<'_>) -> Result<marrow::datatypes::Field> {
         Ok(Field {
             name: String::from(context.get_name()),
             data_type: DataType::Timestamp(TimeUnit::Millisecond, None),
@@ -33,8 +36,8 @@ impl TypeInfo for chrono::NaiveDateTime {
     }
 }
 
-impl TypeInfo for chrono::DateTime<Utc> {
-    fn get_field(context: crate::Context<'_>) -> crate::Result<Field> {
+impl DefaultArrayType for chrono::DateTime<Utc> {
+    fn get_field(context: Context<'_>) -> Result<Field> {
         Ok(Field {
             name: String::from(context.get_name()),
             data_type: DataType::Timestamp(TimeUnit::Millisecond, Some(String::from("UTC"))),
