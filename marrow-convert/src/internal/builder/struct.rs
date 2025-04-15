@@ -54,7 +54,7 @@ macro_rules! impl_struct_builder {
     };
 }
 
-// TODO: is a struct with fields valid?
+// TODO: is a struct without fields valid?
 impl_struct_builder!(A,);
 impl_struct_builder!(A, B,);
 impl_struct_builder!(A, B, C,);

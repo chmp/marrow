@@ -4,7 +4,7 @@ use syn::{
     Lit, LitStr, Meta, Token, punctuated::Punctuated, spanned::Spanned,
 };
 
-pub fn derive_type_info_impl(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
+pub fn derive_type_info(input: proc_macro2::TokenStream) -> proc_macro2::TokenStream {
     let input: DeriveInput = syn::parse2(input).unwrap();
 
     if input
@@ -300,7 +300,7 @@ enum NameSource {
 #[test]
 #[should_panic(expected = "Deriving TypeInfo for generics with type parameters is not supported")]
 fn reject_unsupported() {
-    derive_type_info_impl(quote! {
+    derive_type_info(quote! {
         struct Example<T> {
             field: T,
         }
@@ -309,7 +309,7 @@ fn reject_unsupported() {
 
 #[test]
 fn lifetimes_are_supported() {
-    derive_type_info_impl(quote! {
+    derive_type_info(quote! {
         struct Example<'a> {
             field: &'a i64,
         }
@@ -318,7 +318,7 @@ fn lifetimes_are_supported() {
 
 #[test]
 fn const_params_are_supported() {
-    derive_type_info_impl(quote! {
+    derive_type_info(quote! {
         struct Example<const N: usize> {
             field: [u8; N],
         }

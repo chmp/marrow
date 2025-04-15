@@ -44,3 +44,9 @@ pub mod builder {
     /// Derive [DefaultArrayBuilder] for a given type
     pub use marrow_convert_derive::DefaultArrayBuilder;
 }
+
+/// Additional documentation
+pub mod docs {
+    #[doc = include_str!("../Design.md")]
+    pub mod design {}
+}
