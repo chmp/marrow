@@ -1,5 +1,8 @@
 //! Specialized element types of arrays
 
+/// Reexport the used f16 type
+pub use half::f16;
+
 /// Represent a calendar interval as days and milliseconds
 #[derive(Debug, PartialEq, Clone, Copy, bytemuck::AnyBitPattern, bytemuck::NoUninit)]
 #[repr(C)]
