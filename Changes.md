@@ -1,5 +1,12 @@
 # Change log
 
+## 0.2.4
+
+- Add `arrow=56` support.
+
+Thanks [@jpopesculian](https://github.com/jpopesculian) for the
+[contribution](https://github.com/chmp/marrow/pull/30).
+
 ## 0.2.3
 
 - Add `arrow=55` support
@@ -30,7 +37,7 @@ New features
 
 - Add `Interval` arrays and the `Interval` data type
 - Add `RunEndEncoded` arrays
-- Add `Array::data_type()` and  `View::data_type()`
+- Add `Array::data_type()` and `View::data_type()`
 - Add `MarrowError::new` and `MarrowError::with_cause`
 - Add `as_view` for `Array` and the array structs
 - Implement `PartialEq` for `Array` and `View`, and `FieldMeta`
@@ -40,4 +47,3 @@ New features
 
 Initial release to publish the arrow interop functionality of
 [`serde_arrow`](https://github.com/chmp/serde_arrow) as a separate crate.
-
