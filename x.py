@@ -211,11 +211,11 @@ def doc(private=False, open=False):
 
 @cmd()
 def check_cargo_toml():
-    import tomli
+    import tomllib
 
     print(":: check Cargo.toml")
     with open(self_path / "marrow" / "Cargo.toml", "rb") as fobj:
-        config = tomli.load(fobj)
+        config = tomllib.load(fobj)
 
     for label, features in [
         (

@@ -1,0 +1,14 @@
+[package]
+name = "marrow-convert"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+marrow = { path = "../marrow", default-features = false }
+marrow-convert-derive = { path = "../marrow-convert-derive" }
+
+jiff = { version = "0.2", default-features = false }
+
+chrono = { version = "0.4", default-features = false }
+bigdecimal = {version = "0.4", default-features = false }
+uuid = { version = "1.10.0", default-features = false}
