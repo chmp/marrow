@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 self_path = __import__("pathlib").Path(__file__).parent.resolve()
 python = __import__("shlex").quote(__import__("sys").executable)
 
@@ -69,16 +73,22 @@ workflow_release_template = lambda: {
     "jobs": {
         "release": {
             "runs-on": "ubuntu-latest",
-            "env": {
-                "CARGO_REGISTRY_TOKEN": "${{ secrets.CARGO_REGISTRY_TOKEN }}",
-            },
+            "environment": "release",
             "steps": [
                 {"uses": "actions/checkout@v4"},
                 *_workflow_check_steps(),
                 {
+                    "name": "Auth with crates.io",
+                    "uses": "rust-lang/crates-io-auth-action@v1",
+                    "id": "auth",
+                },
+                {
                     "name": "Publish to crates.io",
                     "working-directory": "marrow",
                     "run": "cargo publish",
+                    "env": {
+                        "CARGO_REGISTRY_TOKEN": "${{ steps.auth.outputs.token }}",
+                    },
                 },
             ],
         }
@@ -212,11 +222,11 @@ def doc(private=False, open=False):
 
 @cmd()
 def check_cargo_toml():
-    import tomli
+    import tomllib
 
     print(":: check Cargo.toml")
     with open(self_path / "marrow" / "Cargo.toml", "rb") as fobj:
-        config = tomli.load(fobj)
+        config = tomllib.load(fobj)
 
     for label, features in [
         (
