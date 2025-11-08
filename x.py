@@ -74,6 +74,7 @@ workflow_release_template = lambda: {
         "release": {
             "runs-on": "ubuntu-latest",
             "environment": "release",
+            "permissions": {"id-token": "write"},
             "steps": [
                 {"uses": "actions/checkout@v4"},
                 *_workflow_check_steps(),
