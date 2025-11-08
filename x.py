@@ -1,3 +1,7 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 self_path = __import__("pathlib").Path(__file__).parent.resolve()
 python = __import__("shlex").quote(__import__("sys").executable)
 
@@ -212,11 +216,11 @@ def doc(private=False, open=False):
 
 @cmd()
 def check_cargo_toml():
-    import tomli
+    import tomllib
 
     print(":: check Cargo.toml")
     with open(self_path / "marrow" / "Cargo.toml", "rb") as fobj:
-        config = tomli.load(fobj)
+        config = tomllib.load(fobj)
 
     for label, features in [
         (
