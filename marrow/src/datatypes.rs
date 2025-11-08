@@ -4,12 +4,14 @@ use std::collections::HashMap;
 use crate::error::{fail, ErrorKind, MarrowError, Result};
 
 // assert that the `DataType` implements the expected traits
+#[allow(unused)]
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for DataType {}
 };
 
 // assert that the `Field`, `FieldMeta`, etc. implement the expected traits
+#[allow(unused)]
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + Default + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for Field {}

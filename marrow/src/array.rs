@@ -18,6 +18,7 @@ use crate::{
 };
 
 // assert that the `Array` implements the expected traits
+#[allow(unused)]
 const _: () = {
     trait AssertExpectedTraits: Clone + std::fmt::Debug + PartialEq + Send + Sync {}
     impl AssertExpectedTraits for Array {}
