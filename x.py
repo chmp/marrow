@@ -73,16 +73,22 @@ workflow_release_template = lambda: {
     "jobs": {
         "release": {
             "runs-on": "ubuntu-latest",
-            "env": {
-                "CARGO_REGISTRY_TOKEN": "${{ secrets.CARGO_REGISTRY_TOKEN }}",
-            },
+            "environment": "release",
             "steps": [
                 {"uses": "actions/checkout@v4"},
                 *_workflow_check_steps(),
                 {
+                    "name": "Auth with crates.io",
+                    "uses": "rust-lang/crates-io-auth-action@v1",
+                    "id": "auth",
+                },
+                {
                     "name": "Publish to crates.io",
                     "working-directory": "marrow",
                     "run": "cargo publish",
+                    "env": {
+                        "CARGO_REGISTRY_TOKEN": "${{ steps.auth.outputs.token }}",
+                    },
                 },
             ],
         }
