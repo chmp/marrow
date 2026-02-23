@@ -1,8 +1,12 @@
 # Change log
 
+## 0.2.6
+
+- Add `arrow=58` support
+
 ## 0.2.5
 
-- Add `arrow=57` support.
+- Add `arrow=57` support
 
 Thanks [@lonless9](https://github.com/lonless9) for the [contribution](https://github.com/chmp/marrow/pull/33)
 
